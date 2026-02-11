@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { addTransaction, updateTransaction } from "../services/api";
 
-const ExpenseForm = ({ refresh, editingTransaction, clearEditing }) => {
+const ExpenseForm = ({ refresh, editingTransaction, clearEditing, selectedDate }) => {
   const [text, setText] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("income"); // "income" or "expense"
@@ -37,7 +37,7 @@ const ExpenseForm = ({ refresh, editingTransaction, clearEditing }) => {
         clearEditing(); // clear editing state after update
       } else {
         // Add new transaction
-        await addTransaction({ text, amount: finalAmount });
+        await addTransaction({ text, amount: finalAmount, date: selectedDate });
       }
 
       // Reset form
