@@ -1,52 +1,54 @@
 import React, { useEffect, useState } from "react";
 import { addTransaction, updateTransaction } from "../services/api";
 
+const categories = ["General", "Food", "Transport", "Shopping", "Bills", "Others"];
+
 const ExpenseForm = ({ refresh, editingTransaction, clearEditing, selectedDate }) => {
   const [text, setText] = useState("");
   const [amount, setAmount] = useState("");
-  const [type, setType] = useState("income"); // "income" or "expense"
+  const [type, setType] = useState("income");
+  const [category, setCategory] = useState("General"); // ✅ state for category
 
-  // Prefill form when editing
   useEffect(() => {
     if (editingTransaction) {
       setText(editingTransaction.text);
-      setAmount(String(Math.abs(editingTransaction.amount))); // always positive in input
+      setAmount(String(Math.abs(editingTransaction.amount)));
       setType(editingTransaction.amount >= 0 ? "income" : "expense");
+      setCategory(editingTransaction.category || "General"); // ✅ prefill category
     } else {
       setText("");
       setAmount("");
       setType("income");
+      setCategory("General");
     }
   }, [editingTransaction]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!text.trim() || Number(amount) === 0) return alert("Invalid input");
 
-    // Convert amount: income positive, expense negative
     const finalAmount = type === "income" ? Number(amount) : -Number(amount);
 
     try {
       if (editingTransaction) {
-        // Update existing transaction
         await updateTransaction(editingTransaction._id, {
           text,
           amount: finalAmount,
+          date: selectedDate,
+          category, // ✅ send selected category
         });
-        clearEditing(); // clear editing state after update
+        clearEditing();
       } else {
-        // Add new transaction
-        await addTransaction({ text, amount: finalAmount, date: selectedDate });
+        await addTransaction({ text, amount: finalAmount, date: selectedDate, category }); // ✅ send category
       }
 
-      // Reset form
       setText("");
       setAmount("");
       setType("income");
-      refresh(); // refresh transactions list
+      setCategory("General");
+      refresh();
     } catch (err) {
-      console.error("Error:", err.response?.data || err);
+      console.error(err.response?.data || err);
     }
   };
 
@@ -91,16 +93,23 @@ const ExpenseForm = ({ refresh, editingTransaction, clearEditing, selectedDate }
         </label>
       </div>
 
+      <div style={{ marginBottom: "0.5rem" }}>
+        <label>Category: </label>
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <button type="submit">
         {editingTransaction ? "Update" : "Add"} {type === "income" ? "Income" : "Expense"}
       </button>
 
       {editingTransaction && (
-        <button
-          type="button"
-          onClick={clearEditing}
-          style={{ marginLeft: "1rem" }}
-        >
+        <button type="button" onClick={clearEditing} style={{ marginLeft: "1rem" }}>
           Cancel
         </button>
       )}

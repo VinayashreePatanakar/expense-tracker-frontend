@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import TransactionList from "./components/TransactionList";
 import ExpenseForm from "./components/ExpenseForm";
+import Dashboard from "./components/Dashboard";
 import { getTransactions, addTransaction, deleteTransaction, updateTransaction } from "./services/api";
 
 function App() {
@@ -12,9 +13,8 @@ function App() {
 
   const [editingTransaction, setEditingTransaction] = useState(null);
 
-  const [selectedDate, setSelectedDate] = useState(
-  new Date().toISOString().split("T")[0]
-);
+  const today = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(today);
 
 const fetchTransactions = async () => {
   try {
@@ -62,6 +62,8 @@ useEffect(() => {
   return (
     <div style={{ maxWidth: "800px", margin: "2rem auto", fontFamily: "'Poppins', sans-serif", color: "#333" }}>
       <h1 style={{ textAlign: "center", color: "#ff7f50" }}>Expense Tracker</h1>
+      <h2>Hello Vinayashree(make_name_automatic)</h2>
+      <h4>Welcome back</h4>
       <div style={{
         background: "#fff9f3",
         padding: "1rem",
@@ -75,6 +77,7 @@ useEffect(() => {
           <input
             type="date"
             value={selectedDate}
+            max={new Date().toISOString().split("T")[0]} // 🔥 THIS LINE
             onChange={(e) => setSelectedDate(e.target.value)}
             style={{
               padding: "0.4rem",
@@ -87,6 +90,8 @@ useEffect(() => {
         <h3 style={{ color: "#2b7a2b" }}>Income: ${income.toFixed(2)}</h3>
         <h3 style={{ color: "#7a2b2b" }}>Expense: ${expense.toFixed(2)}</h3>
       </div>
+
+      <Dashboard transactions={transactions} />
 
       <ExpenseForm
         refresh={fetchTransactions}

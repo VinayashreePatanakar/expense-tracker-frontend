@@ -3,35 +3,23 @@ import React from "react";
 const TransactionList = ({ transactions, onDelete, onEdit }) => {
   return (
     <div style={styles.container}>
-      {transactions.length === 0 && (
-        <p style={styles.empty}>No transactions yet ✨</p>
-      )}
+      {transactions.length === 0 && <p style={styles.empty}>No transactions yet ✨</p>}
 
       {transactions.map((t) => (
         <div key={t._id} style={styles.card}>
           <div>
             <h4 style={styles.title}>{t.text}</h4>
-            <p
-              style={{
-                ...styles.amount,
-                color: t.amount > 0 ? "#2ecc71" : "#e74c3c",
-              }}
-            >
+            <p style={{ ...styles.amount, color: t.amount > 0 ? "#2ecc71" : "#e74c3c" }}>
               {t.amount > 0 ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
             </p>
+            <p style={styles.category}>Category: {t.category || "General"}</p> {/* ✅ show category */}
           </div>
 
           <div style={styles.actions}>
-           <button
-              style={styles.editBtn}
-              onClick={() => onEdit && onEdit(t)}
-            >
+            <button style={styles.editBtn} onClick={() => onEdit && onEdit(t)}>
               Edit
             </button>
-            <button
-              style={styles.deleteBtn}
-              onClick={() => onDelete(t._id)}
-            >
+            <button style={styles.deleteBtn} onClick={() => onDelete(t._id)}>
               Delete
             </button>
           </div>
@@ -42,9 +30,7 @@ const TransactionList = ({ transactions, onDelete, onEdit }) => {
 };
 
 const styles = {
-  container: {
-    marginTop: "1rem",
-  },
+  container: { marginTop: "1rem" },
   card: {
     background: "#ffffff",
     padding: "1rem",
@@ -56,19 +42,10 @@ const styles = {
     alignItems: "center",
     flexWrap: "wrap",
   },
-  title: {
-    margin: 0,
-    fontSize: "1rem",
-  },
-  amount: {
-    margin: "0.3rem 0 0",
-    fontWeight: "bold",
-    fontSize: "1.1rem",
-  },
-  actions: {
-    display: "flex",
-    gap: "0.5rem",
-  },
+  title: { margin: 0, fontSize: "1rem" },
+  amount: { margin: "0.3rem 0 0", fontWeight: "bold", fontSize: "1.1rem" },
+  category: { margin: "0.3rem 0 0", fontSize: "0.9rem", color: "#555" }, // ✅ style
+  actions: { display: "flex", gap: "0.5rem" },
   editBtn: {
     padding: "0.4rem 0.8rem",
     borderRadius: "8px",
@@ -85,10 +62,7 @@ const styles = {
     color: "white",
     cursor: "pointer",
   },
-  empty: {
-    textAlign: "center",
-    color: "#aaa",
-  },
+  empty: { textAlign: "center", color: "#aaa" },
 };
 
 export default TransactionList;
