@@ -605,3 +605,11 @@ button {
 button:hover:not(:disabled) {
   transform: translateY(-2px);
 }
+
+.logout-btn {
+  cursor: pointer;
+}
+
+.register-btn .login-btn {
+  cursor: pointer;
+}

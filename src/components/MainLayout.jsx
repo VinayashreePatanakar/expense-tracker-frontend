@@ -67,6 +67,12 @@ const MainLayout = () => {
         <div className="nav" onClick={() => setActivePage("profile")}>
           Profile
         </div>
+        <div className="logout-btn" onClick={() => {
+          localStorage.clear();
+          window.location.reload();
+        }}>
+          Logout
+        </div>
       </div>
 
       {/* Content */}
