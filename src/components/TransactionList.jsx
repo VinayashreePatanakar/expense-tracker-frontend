@@ -13,6 +13,8 @@ const TransactionList = ({ transactions, onDelete, onEdit }) => {
               {t.amount > 0 ? "+" : "-"}${Math.abs(t.amount).toFixed(2)}
             </p>
             <p style={styles.category}>Category: {t.category || "General"}</p> {/* ✅ show category */}
+            <p style={styles.category}>Mode: {t.mode || "debit"}</p>
+            <p style={styles.category}>Description: {t.description || "-"}</p>
           </div>
 
           <div style={styles.actions}>

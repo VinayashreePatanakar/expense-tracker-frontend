@@ -6,3 +6,4 @@ export const getTransactions = (date) => axios.get(API_URL, { params: { date } }
 export const addTransaction = (data) => {return axios.post(API_URL, data)};
 export const deleteTransaction = (id) => axios.delete(`${API_URL}/${id}`);
 export const updateTransaction = (id, data) => axios.put(`${API_URL}/${id}`, data);
+export const getAllTransactions = () => axios.get(API_URL); // fetch all transactions
