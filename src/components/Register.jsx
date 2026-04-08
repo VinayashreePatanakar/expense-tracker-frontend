@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import "../App.css";
+import { API } from "../services/api";
 
 const Register = ({ setUser }) => {
   const [name, setName] = useState("");
@@ -10,11 +11,11 @@ const Register = ({ setUser }) => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
+      const res = await API.post("/auth/register", {
         name,
         email,
         password,
-      });
+      }); 
 
       // Auto login after register
       localStorage.setItem("token", res.data.token);
@@ -22,7 +23,8 @@ const Register = ({ setUser }) => {
 
       setUser(res.data.user);
     } catch (err) {
-      alert(err.response?.data?.message || "User already exists");
+      console.log(err.response); // 👈 add this
+     alert(err.response?.data?.message || "User already exists");
     }
   };
 
@@ -30,24 +32,9 @@ const Register = ({ setUser }) => {
     <div className="auth-container">
       <h2>Register</h2>
       <form onSubmit={handleRegister}>
-        <input
-          type="text"
-          placeholder="Name"
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <input type="text" placeholder="Name" onChange={(e) => setName(e.target.value)} required />
+        <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
+        <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
         <button type="submit">Register</button>
       </form>
     </div>
