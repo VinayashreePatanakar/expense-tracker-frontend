@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { UserRoundKey } from 'lucide-react';
 import "../App.css";
 
 const Login = ({ setUser }) => {
@@ -28,7 +29,7 @@ const Login = ({ setUser }) => {
       <h2>Login</h2>
       <input type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
       <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleLogin}>Login <UserRoundKey /></button>
     </div>
   );
 };

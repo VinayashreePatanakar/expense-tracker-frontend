@@ -33,7 +33,7 @@ function App() {
     );
   }
 
-  return <MainLayout />;
+  return <MainLayout user={user} />;
 }
 
 export default App;

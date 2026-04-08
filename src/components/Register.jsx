@@ -7,7 +7,8 @@ const Register = ({ setUser }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = async () => {
+  const handleRegister = async (e) => {
+    e.preventDefault();
     try {
       const res = await axios.post("http://localhost:5000/api/auth/register", {
         name,
@@ -20,19 +21,35 @@ const Register = ({ setUser }) => {
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       setUser(res.data.user);
-
     } catch (err) {
-      alert("User already exists");
+      alert(err.response?.data?.message || "User already exists");
     }
   };
 
   return (
     <div className="auth-container">
       <h2>Register</h2>
-      <input type="text" placeholder="Name" onChange={e => setName(e.target.value)} />
-      <input type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
-      <button onClick={handleRegister}>Register</button>
+      <form onSubmit={handleRegister}>
+        <input
+          type="text"
+          placeholder="Name"
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button type="submit">Register</button>
+      </form>
     </div>
   );
 };

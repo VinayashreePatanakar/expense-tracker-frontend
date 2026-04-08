@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { ArrowBigLeft, ArrowBigRight, SquarePen, Trash } from 'lucide-react';
 import TransactionModal from "./TransactionModal";
 import { deleteTransaction } from "../services/api";
 import ConfirmDelete from "./ConfirmDelete";
@@ -273,7 +274,7 @@ const closeFilter = () => {
             disabled={selectedIds.length !== 1}
             onClick={handleEditSelected}
           >
-            Edit
+            <SquarePen/>
           </button>
 
           <button
@@ -281,7 +282,7 @@ const closeFilter = () => {
             disabled={selectedIds.length === 0}
             onClick={() => setShowConfirm(true)}
           >
-            Delete
+            <Trash/>
           </button>
         </div>
       </div>
@@ -489,7 +490,7 @@ const closeFilter = () => {
     onClick={() => setCurrentPage((prev) => prev - 1)}
     disabled={currentPage === 1}
   >
-    Previous
+    <ArrowBigLeft/>
   </button>
 
   {Array.from({ length: totalPages }, (_, i) => (
@@ -506,7 +507,7 @@ const closeFilter = () => {
     onClick={() => setCurrentPage((prev) => prev + 1)}
     disabled={currentPage === totalPages || totalPages === 0}
   >
-    Next
+    <ArrowBigRight/>
   </button>
 </div>
 

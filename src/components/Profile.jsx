@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const USER_ID = "YOUR_USER_ID_HERE"; // Replace with logged-in user ID
-
 const Profile = () => {
   const [user, setUser] = useState({});
   const [editMode, setEditMode] = useState(false);
@@ -17,10 +15,16 @@ const Profile = () => {
      Fetch User Data
   ========================== */
   useEffect(() => {
-    axios
-      .get(`http://localhost:5000/api/users/${USER_ID}`)
-      .then((res) => setUser(res.data))
-      .catch((err) => console.error(err));
+    const userData = JSON.parse(localStorage.getItem("user"));
+    const token = localStorage.getItem("token");
+    if (userData && userData._id && token) {
+      axios
+        .get(`http://localhost:5000/api/users/${userData._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setUser(res.data))
+        .catch((err) => console.error(err));
+    }
   }, []);
 
   /* =========================
@@ -35,29 +39,17 @@ const Profile = () => {
   };
 
   /* =========================
-     Profile Image Upload
-  ========================== */
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      setUser({ ...user, profileImage: reader.result });
-    };
-
-    if (file) {
-      reader.readAsDataURL(file);
-    }
-  };
-
-  /* =========================
      Save Profile
   ========================== */
   const handleSave = async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await axios.put(
-        `http://localhost:5000/api/users/${USER_ID}`,
-        user
+        `http://localhost:5000/api/users/${user._id}`,
+        user,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setUser(res.data);
       setEditMode(false);
@@ -72,9 +64,13 @@ const Profile = () => {
   ========================== */
   const handleChangePassword = async () => {
     try {
+      const token = localStorage.getItem("token");
       await axios.put(
-        `http://localhost:5000/api/users/change-password/${USER_ID}`,
-        passwordData
+        `http://localhost:5000/api/users/change-password/${user._id}`,
+        passwordData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       alert("Password changed successfully!");
       setPasswordData({ currentPassword: "", newPassword: "" });
@@ -86,18 +82,6 @@ const Profile = () => {
   return (
     <div style={containerStyle}>
       <h2>👤 Profile Settings</h2>
-
-      {/* Profile Image */}
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        <img
-          src={user.profileImage || "https://via.placeholder.com/120"}
-          alt="Profile"
-          style={imageStyle}
-        />
-        {editMode && (
-          <input type="file" accept="image/*" onChange={handleImageUpload} />
-        )}
-      </div>
 
       {/* Name */}
       <input
@@ -179,14 +163,6 @@ const containerStyle = {
   padding: "30px",
   borderRadius: "10px",
   boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-};
-
-const imageStyle = {
-  width: "120px",
-  height: "120px",
-  borderRadius: "50%",
-  objectFit: "cover",
-  marginBottom: "10px",
 };
 
 const inputStyle = {

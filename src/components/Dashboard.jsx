@@ -1,14 +1,34 @@
 import React, { useState, useMemo, useEffect } from "react";
 import "../App.css";
-import { BarChart, PieChart, Pie, Cell, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  PieChart,
+  Pie,
+  Cell,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import * as XLSX from "xlsx";
 import { LineChart, Line } from "recharts";
 import { DateRange } from "react-date-range";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
+import * as htmlToImage from "html-to-image";
 
-const Dashboard = ({ transactions }) => {
+const Dashboard = ({ transactions, user }) => {
+
+  //Add Global Dark Mode Support
+  const [darkMode, setDarkMode] = useState(false);
+
+  //Add Toggle (Monthly / Weekly + Stacked)
+  const [viewMode, setViewMode] = useState("monthly");
+  const [stacked, setStacked] = useState(false);
 
 // Define colors for slices
 const COLORS = [
@@ -169,38 +189,58 @@ transactions
 // ✅ Monthly chart data (group by month between fromDate and toDate)
 
 const chartData = useMemo(() => {
-  const monthlyMap = {};
+  const map = {};
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+  to.setHours(23, 59, 59, 999);
 
   transactions.forEach((t) => {
-    if (t.date >= fromDate && t.date <= toDate) {
+    const d = new Date(t.date);
+    if (d >= from && d <= to) {
 
-      const dateObj = new Date(t.date);
-      const monthKey = dateObj.toLocaleString("default", {
-        month: "short",
-        year: "numeric",
-      });
+      let key;
 
-      if (!monthlyMap[monthKey]) {
-        monthlyMap[monthKey] = {
-          month: monthKey,
-          income: 0,
-          expense: 0,
-        };
+      if (viewMode === "monthly") {
+        key = d.toLocaleString("default", { month: "short", year: "numeric" });
+      } else {
+        const week = Math.ceil(d.getDate() / 7);
+        key = `Week ${week} - ${d.toLocaleString("default", { month: "short" })}`;
+      }
+
+      if (!map[key]) {
+        map[key] = { period: key, income: 0, expense: 0 };
       }
 
       if (t.amount > 0) {
-        monthlyMap[monthKey].income += t.amount;
+        map[key].income += Number(t.amount);
       } else {
-        monthlyMap[monthKey].expense += Math.abs(t.amount);
+        map[key].expense += Math.abs(Number(t.amount));
       }
     }
   });
 
-  return Object.values(monthlyMap);
-}, [transactions, fromDate, toDate]);
+  return Object.values(map);
+}, [transactions, fromDate, toDate, viewMode]);
+
+console.log("Monthly Chart Data:", chartData);
 
 console.log("Transactions:", transactions);
-console.log("Chart Data:", chartData);
+
+const renderAnimatedLabel = (props) => {
+  const { x, y, width, value } = props;
+
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 10}
+      textAnchor="middle"
+      fill={darkMode ? "#fff" : "#111"}
+      style={{ fontSize: 12, fontWeight: 600 }}
+    >
+      ₹{value}
+    </text>
+  );
+};
 
 // ================= PAGINATED TRANSACTIONS =================
 const sortedTransactions = [...filteredTransactions].sort((a, b) => {
@@ -217,9 +257,44 @@ const paginatedTransactions = sortedTransactions.slice(
 
   console.log(transactions.map(t => t.date));
 
+  const exportChart = () => {
+  const node = document.getElementById("chart-export");
+
+  htmlToImage.toPng(node).then((dataUrl) => {
+    const link = document.createElement("a");
+    link.download = "chart.png";
+    link.href = dataUrl;
+    link.click();
+  });
+};
+
   return (
     //Add this main wrapper around everything
-    <div className="dashboard-container">
+    <div className={`dashboard-container ${darkMode ? "dark" : ""}`}>
+      <div
+  style={{
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    marginBottom: "20px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+  }}
+>
+  <h2 style={{ margin: 0 }}>
+    Welcome back, <span style={{ color: "#2563eb" }}>{user?.name}</span> 👋
+  </h2>
+  <p style={{ color: "#6b7280", marginTop: "5px" }}>
+    Here’s your financial overview
+  </p>
+</div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 15 }}>
+        <button
+          className="btn-primary"
+          onClick={() => setDarkMode(!darkMode)}
+        >
+          {darkMode ? "☀ Light Mode" : "🌙 Dark Mode"}
+        </button>
+      </div>
       {/* ================= SUMMARY  CARDS ================= */}
     <div className="summary-grid">
         <div className="summary-card income"><h4>Income</h4><p>₹{income}</p></div>
@@ -286,29 +361,98 @@ const paginatedTransactions = sortedTransactions.slice(
   )}
 </div>
 
+<div style={{ display: "flex", gap: 10, marginBottom: 15 }}>
+  <button onClick={() => setViewMode("monthly")} className="btn-primary">
+    Monthly
+  </button>
+  <button onClick={() => setViewMode("weekly")} className="btn-primary">
+    Weekly
+  </button>
+  <button onClick={() => setStacked(!stacked)} className="btn-primary">
+    {stacked ? "Grouped" : "Stacked"}
+  </button>
+</div>
+
   {/* ================= 2-COLUMN CHART LAYOUT ================= */}
  <div className="charts-grid">
    {/* LEFT COLUMN */}
     <div className="left-column">
     {/* Monthly Income vs Expense */}
    <div className="chart-card">
-    <h3>Monthly Income vs Expense</h3>
-    {chartData.length===0 ? <p className="empty-state">No data available</p> : (
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={chartData}>
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="income" fill="#22c55e" />
-          <Bar dataKey="expense" fill="#ef4444" />
-        </BarChart>
-      </ResponsiveContainer>
-    )}
-  </div>
+  <h3 style={{ marginBottom: "20px" }}>
+    Monthly Income vs Expense
+  </h3>
+
+  {chartData.length === 0 ? (
+    <p className="empty-state">No data available</p>
+  ) : (
+  <ResponsiveContainer width="100%" height={320}>
+  <BarChart data={chartData} barGap={8} barCategoryGap="20%">
+    <defs>
+      <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#22c55e" stopOpacity={1} />
+        <stop offset="100%" stopColor="#16a34a" stopOpacity={0.8} />
+      </linearGradient>
+
+      <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+        <stop offset="100%" stopColor="#dc2626" stopOpacity={0.8} />
+      </linearGradient>
+    </defs>
+
+    <CartesianGrid
+  strokeDasharray="3 3"
+  vertical={false}
+  stroke={darkMode ? "#334155" : "#e5e7eb"}
+/>
+    <XAxis
+  dataKey="period"
+  tick={{ fill: darkMode ? "#cbd5e1" : "#374151" }}
+  axisLine={false}
+  tickLine={false}
+/>
+    <YAxis
+  tick={{ fill: darkMode ? "#cbd5e1" : "#374151" }}
+  axisLine={false}
+  tickLine={false}
+/>
+    <Tooltip
+      contentStyle={{
+        backgroundColor: "#fff",          
+        borderRadius: "10px",
+        border: "1px solid #e5e7eb",
+        boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
+      }}
+      formatter={(value, name) => [
+        `₹${value}`,
+        name === "income" ? "Income" : "Expense",
+      ]}
+    />
+    <Legend />
+
+    <Bar
+      dataKey="income"
+      fill="url(#incomeGradient)"
+      radius={[8, 8, 0, 0]}
+      animationDuration={1000}
+      animationEasing="ease-out"
+      label={renderAnimatedLabel}
+    />
+    <Bar
+      dataKey="expense"
+      fill="url(#expenseGradient)"
+      radius={[8, 8, 0, 0]}
+      animationDuration={1000}
+      animationEasing="ease-out"
+      label={renderAnimatedLabel}
+    />
+  </BarChart>
+</ResponsiveContainer>
+  )}
+</div>
 
 {/* Account Balance Line Chart */}
-          <div className="chart-card">
+<div className="chart-card">
     <h3 style={{ marginBottom: "20px" }}>Account Balance Over Time</h3>
 
     {balanceChartData.length === 0 ? (
@@ -330,12 +474,15 @@ const paginatedTransactions = sortedTransactions.slice(
   />
   <Legend />
   <Line
-    type="monotone"
-    dataKey="balance"
-    stroke="#2563eb"
-    strokeWidth={2}
-    dot={{ r: 4 }}
-  />
+  type="monotone"
+  dataKey="balance"
+  stroke="#3b82f6"
+  strokeWidth={3}
+  dot={{ r: 5 }}
+  activeDot={{ r: 8 }}
+  animationDuration={1200}
+  style={{ filter: "drop-shadow(0px 4px 10px rgba(59,130,246,0.4))" }}
+/>
 </LineChart>
       </ResponsiveContainer>
     )}
@@ -402,9 +549,28 @@ const paginatedTransactions = sortedTransactions.slice(
                       }}
           >
             {categoryChartData.map((entry, index) => (
-                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={index}
+                        fill={COLORS[index % COLORS.length]}
+                        style={{
+                          filter: "drop-shadow(0px 4px 8px rgba(0,0,0,0.25))",
+                        }}
+                      />
                       ))}
                     </Pie>
+                    <text
+  x="40%"
+  y="46%"
+  textAnchor="middle"
+  dominantBaseline="middle"
+  style={{
+    fontSize: 18,
+    fontWeight: 600,
+    fill: darkMode ? "#fff" : "#111",
+  }}
+>
+  ₹{expense}
+</text>
                     <Tooltip
                       formatter={(value, name, props) => {
                         const c = props.payload;
@@ -429,6 +595,10 @@ const paginatedTransactions = sortedTransactions.slice(
           </div>
         </div>
       </div>  
+
+      <button className="btn-primary" onClick={exportChart}>
+      Export Chart
+    </button>
 
       {/* ================= RECENT TRANSACTIONS ================= */}
       <div className="transactions-card">
