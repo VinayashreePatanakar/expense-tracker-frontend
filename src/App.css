@@ -54,8 +54,12 @@ body {
 .dashboard-container {
   padding: 30px;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+  background: #F9FAFB;
   transition: all 0.3s ease;
+}
+
+.dashboard-container.dark {
+  background: #0F172A;
 }
 
 .logo {
@@ -155,6 +159,11 @@ h1 {
   transition: all 0.3s ease;
 }
 
+.dashboard-container.dark .summary-card {
+  background: rgba(30, 41, 59, 0.8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
 .summary-card:hover {
   transform: translateY(-5px);
 }
@@ -179,6 +188,11 @@ h1 {
 .date-filter-wrapper { position: relative; margin-bottom: 20px; }
 .date-picker { padding:10px 15px; border-radius:8px; border:1px solid #ccc; cursor:pointer; background:#f8f9fa; width:250px; }
 .date-picker-popup { position:absolute; top:50px; z-index:1000; background:#fff; box-shadow:0 4px 20px rgba(0,0,0,0.1); padding:10px; }
+
+.dashboard-container.dark .date-picker-popup {
+  background: #1E293B;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
 .picker-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:10px; }
 
 .date-filter {
@@ -284,13 +298,27 @@ h1 {
   text-align: left;
 }
 
+.dashboard-container.dark .recent-transactions th {
+  background: #334155;
+  color: #F1F5F9;
+}
+
 .recent-transactions td {
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
 }
 
+.dashboard-container.dark .recent-transactions td {
+  border-bottom: 1px solid #334155;
+  color: #F1F5F9;
+}
+
 .recent-transactions tr:hover {
   background: rgba(59, 130, 246, 0.05);
+}
+
+.dashboard-container.dark .recent-transactions tr:hover {
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .recent-transactions tbody tr:nth-child(even) {
@@ -298,6 +326,10 @@ h1 {
 }
 .recent-transactions tbody tr:hover {
   background: linear-gradient(90deg, #e0f2fe, #f0f9ff);
+}
+
+.dashboard-container.dark .recent-transactions tbody tr:nth-child(even) {
+  background: #1E293B;
 }
 .recent-transactions .income {
   color: #22c55e;
@@ -343,6 +375,11 @@ h1 {
   overflow: hidden;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
   border-collapse: collapse;
+}
+
+.dashboard-container.dark .transaction-table {
+  background: #1E293B;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .transaction-table th,

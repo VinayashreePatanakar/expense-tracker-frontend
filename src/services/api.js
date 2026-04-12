@@ -1,10 +1,16 @@
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+if (!BASE_URL) {
+  console.error("❌ VITE_API_URL is missing!");
+}
+
 export const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL  || "http://localhost:5000/api",
+  baseURL: BASE_URL || "http://localhost:5000/api", // fallback for safety,
 });
 
-console.log("API URL:", import.meta.env.VITE_API_URL);
+console.log("API URL:", BASE_URL);
 
 // 🔥 Automatically attach token to every request
 API.interceptors.request.use((req) => {

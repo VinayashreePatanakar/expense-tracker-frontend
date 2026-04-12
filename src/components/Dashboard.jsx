@@ -26,6 +26,27 @@ const Dashboard = ({ transactions, user }) => {
   //Add Global Dark Mode Support
   const [darkMode, setDarkMode] = useState(false);
 
+  // Define theme colors
+  const lightTheme = {
+    bg: "#F9FAFB",
+    card: "#FFFFFF",
+    textPrimary: "#111827",
+    textSecondary: "#374151",
+    textMuted: "#6B7280",
+    border: "#E5E7EB",
+  };
+
+  const darkTheme = {
+    bg: "#0F172A",
+    card: "#1E293B",
+    textPrimary: "#F1F5F9",
+    textSecondary: "#CBD5E1",
+    textMuted: "#94A3B8",
+    border: "#334155",
+  };
+
+  const theme = darkMode ? darkTheme : lightTheme;
+
   //Add Toggle (Monthly / Weekly + Stacked)
   const [viewMode, setViewMode] = useState("monthly");
   const [stacked, setStacked] = useState(false);
@@ -234,7 +255,7 @@ const renderAnimatedLabel = (props) => {
       x={x + width / 2}
       y={y - 10}
       textAnchor="middle"
-      fill={darkMode ? "#fff" : "#111"}
+      fill={theme.textPrimary}
       style={{ fontSize: 12, fontWeight: 600 }}
     >
       ₹{value}
@@ -273,7 +294,7 @@ const paginatedTransactions = sortedTransactions.slice(
     <div className={`dashboard-container ${darkMode ? "dark" : ""}`}>
       <div
   style={{
-    background: "#fff",
+    background: theme.card,
     padding: "20px",
     borderRadius: "12px",
     marginBottom: "20px",
@@ -566,7 +587,7 @@ const paginatedTransactions = sortedTransactions.slice(
   style={{
     fontSize: 18,
     fontWeight: 600,
-    fill: darkMode ? "#fff" : "#111",
+    fill: theme.textPrimary,
   }}
 >
   ₹{expense}
