@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { getBudget, saveBudget } from "../services/api";
 
 const Reports = ({ transactions = [] }) => {
@@ -38,26 +38,26 @@ const Reports = ({ transactions = [] }) => {
   }, [transactions, selectedMonth]);
 
   // ✅ FETCH BUDGET FROM DB
-  useEffect(() => {
-    const fetchBudget = async () => {
-      try {
-        const res = await getBudget(
-          useSameBudget ? "default" : selectedMonth
-        );
 
-        if (res.data) {
-          setBudgets(res.data.categories || {});
-          setTotalBudget(res.data.totalBudget || 0);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
+const fetchBudget = useCallback(async () => {
+  try {
+    const res = await getBudget(
+      useSameBudget ? "default" : selectedMonth
+    );
 
-    fetchBudget();
-  }, [selectedMonth, useSameBudget]);
+    if (res.data) {
+      setBudgets(res.data.categories || {});
+      setTotalBudget(res.data.totalBudget || 0);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}, [selectedMonth, useSameBudget]);
+  
+useEffect(() => {
+  fetchBudget();
+}, [fetchBudget]);
 
-  // ✅ HANDLERS
   const handleBudgetChange = (category, value) => {
     setBudgets({ ...budgets, [category]: parseFloat(value) || 0 });
   };
@@ -67,20 +67,23 @@ const Reports = ({ transactions = [] }) => {
   };
 
   // ✅ SAVE
-  const saveBudgets = async () => {
-    try {
-      const payload = {
-        month: useSameBudget ? "default" : selectedMonth,
-        totalBudget,
-        categories: budgets,
-      };
+const saveBudgets = async () => {
+  try {
+    const payload = {
+      month: useSameBudget ? "default" : selectedMonth,
+      totalBudget,
+      categories: budgets,
+    };
 
-      await saveBudget(payload);
-      alert("Budget saved successfully 🚀");
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    await saveBudget(payload);
+    await fetchBudget();
+
+    setEditMode(false); // ✅ MOVE THIS BEFORE ALERT
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // ✅ SUMMARY
   const totalSpent = Object.values(spent).reduce((a, b) => a + b, 0);
