@@ -21,31 +21,15 @@ import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
 import * as htmlToImage from "html-to-image";
 
-const Dashboard = ({ transactions, user }) => {
+const Dashboard = ({ transactions, user, darkMode }) => {
 
-  //Add Global Dark Mode Support
-  const [darkMode, setDarkMode] = useState(false);
-
-  // Define theme colors
-  const lightTheme = {
-    bg: "#F9FAFB",
-    card: "#FFFFFF",
-    textPrimary: "#111827",
-    textSecondary: "#374151",
-    textMuted: "#6B7280",
-    border: "#E5E7EB",
-  };
-
-  const darkTheme = {
-    bg: "#0F172A",
-    card: "#1E293B",
-    textPrimary: "#F1F5F9",
-    textSecondary: "#CBD5E1",
-    textMuted: "#94A3B8",
-    border: "#334155",
-  };
-
-  const theme = darkMode ? darkTheme : lightTheme;
+  const theme = {
+  bg: darkMode ? "#0F172A" : "#F9FAFB",
+  card: darkMode ? "#1E293B" : "#FFFFFF",
+  text: darkMode ? "#F1F5F9" : "#111827",
+  subtext: darkMode ? "#94A3B8" : "#6B7280",
+  border: darkMode ? "#334155" : "#E5E7EB",
+};
 
   //Add Toggle (Monthly / Weekly + Stacked)
   const [viewMode, setViewMode] = useState("monthly");
@@ -53,15 +37,19 @@ const Dashboard = ({ transactions, user }) => {
 
 // Define colors for slices
 const COLORS = [
-  "#4fd1c5",
+  "#A52A2A",
   "#c6d615",
   "#c66a4a",
   "#2f7de1",
-  "#f87171",
-  "#b44dc0",
-  "#7c5cd6",
-  "#3b82f6",
+  "#8B8000",
+  "#DC143C",
+  "#008080",
+  "#630330",
+  "#a98ff0",
+  "#F4BB44",
+  "#e0909d",
   "#14b8a6",
+  "#9F2B68"
 ];
 
   // ✅ Default: current month first & last day
@@ -136,17 +124,18 @@ const balanceChartData = useMemo(() => {
 
   let runningBalance = 0;
 
-  return sorted.map((t) => {
+  return sorted.map((t, index) => {
     runningBalance += Number(t.amount);
 
     return {
-      timestamp: t.timestamp,
+      timestamp: new Date(t.date).getTime() + index * 1000, // 👈 add spacing 
       balance: runningBalance,
+      change: Number(t.amount), // ✅ ADD THIS
     };
   });
 }, [filteredTransactions]);
 
-console.log("balanceChartData: "+balanceChartData);
+console.table(balanceChartData);
 
 // Category-wise Pie Chart Data and summary chart data (for selected date range)
 const categoryChartData = useMemo(() => {
@@ -255,7 +244,7 @@ const renderAnimatedLabel = (props) => {
       x={x + width / 2}
       y={y - 10}
       textAnchor="middle"
-      fill={theme.textPrimary}
+      fill={theme.text}
       style={{ fontSize: 12, fontWeight: 600 }}
     >
       ₹{value}
@@ -278,8 +267,13 @@ const paginatedTransactions = sortedTransactions.slice(
 
   console.log(transactions.map(t => t.date));
 
-  const exportChart = () => {
+const exportChart = () => {
   const node = document.getElementById("chart-export");
+
+  if (!node) {
+    console.error("Chart element not found!");
+    return;
+  }
 
   htmlToImage.toPng(node).then((dataUrl) => {
     const link = document.createElement("a");
@@ -292,30 +286,6 @@ const paginatedTransactions = sortedTransactions.slice(
   return (
     //Add this main wrapper around everything
     <div className={`dashboard-container ${darkMode ? "dark" : ""}`}>
-      <div
-  style={{
-    background: theme.card,
-    padding: "20px",
-    borderRadius: "12px",
-    marginBottom: "20px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-  }}
->
-  <h2 style={{ margin: 0 }}>
-    Welcome back, <span style={{ color: "#2563eb" }}>{user?.name}</span> 👋
-  </h2>
-  <p style={{ color: "#6b7280", marginTop: "5px" }}>
-    Here’s your financial overview
-  </p>
-</div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 15 }}>
-        <button
-          className="btn-primary"
-          onClick={() => setDarkMode(!darkMode)}
-        >
-          {darkMode ? "☀ Light Mode" : "🌙 Dark Mode"}
-        </button>
-      </div>
       {/* ================= SUMMARY  CARDS ================= */}
     <div className="summary-grid">
         <div className="summary-card income"><h4>Income</h4><p>₹{income}</p></div>
@@ -325,14 +295,47 @@ const paginatedTransactions = sortedTransactions.slice(
       </div>
 
       {/* ================= DATE FILTER ================= */}
- <div className="date-filter-wrapper">
-   <div className="date-picker" onClick={()=>setShowPicker(!showPicker)}>
-    {format(new Date(fromDate), "dd/MM/yyyy")} -{" "}
-    {format(new Date(toDate), "dd/MM/yyyy")}
+ <div className="date-filter-wrapper" style={{
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  flexWrap: "wrap", // responsive
+  gap: "10px",
+  marginBottom: "15px"
+}}>
+
+  {/* LEFT SIDE */}
+  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+    
+    {/* Date Picker */}
+    <div className="date-picker" onClick={() => setShowPicker(!showPicker)}>
+      {format(new Date(fromDate), "dd/MM/yyyy")} -{" "}
+      {format(new Date(toDate), "dd/MM/yyyy")}
+    </div>
+
+    {/* Buttons */}
+    <button onClick={() => setViewMode("monthly")} className="btn-primary">
+      Monthly
+    </button>
+
+    <button onClick={() => setViewMode("weekly")} className="btn-primary">
+      Weekly
+    </button>
+
+    <button onClick={() => setStacked(!stacked)} className="btn-primary">
+      {stacked ? "Grouped" : "Stacked"}
+    </button>
+
   </div>
 
+  {/* RIGHT SIDE */}
+  <button className="btn-primary export-chart" onClick={exportChart}>
+    Export Chart
+  </button>
+
+  {/* DATE PICKER POPUP */}
   {showPicker && (
-     <div className="date-picker-popup">
+    <div className="date-picker-popup">
       <DateRange
         editableDateInputs={true}
         onChange={(item) => setRange([item.selection])}
@@ -340,39 +343,17 @@ const paginatedTransactions = sortedTransactions.slice(
         ranges={range}
         months={2}
         direction="horizontal"
-        maxDate={new Date()}   // ✅ This disables future dates
+        maxDate={new Date()}
       />
 
       <div className="picker-actions">
-        <button
-          onClick={() => setShowPicker(false)}
-          style={{
-            padding: "8px 15px",
-            borderRadius: "6px",
-            border: "none",
-            background: "#6c757d",
-            color: "#fff",
-          }}
-        >
-          Cancel
-        </button>
+        <button onClick={() => setShowPicker(false)}>Cancel</button>
 
         <button
           onClick={() => {
-            setFromDate(
-              format(range[0].startDate, "yyyy-MM-dd")
-            );
-            setToDate(
-              format(range[0].endDate, "yyyy-MM-dd")
-            );
+            setFromDate(format(range[0].startDate, "yyyy-MM-dd"));
+            setToDate(format(range[0].endDate, "yyyy-MM-dd"));
             setShowPicker(false);
-          }}
-          style={{
-            padding: "8px 15px",
-            borderRadius: "6px",
-            border: "none",
-            background: "#2563eb",
-            color: "#fff",
           }}
         >
           Apply
@@ -380,22 +361,12 @@ const paginatedTransactions = sortedTransactions.slice(
       </div>
     </div>
   )}
+
 </div>
 
-<div style={{ display: "flex", gap: 10, marginBottom: 15 }}>
-  <button onClick={() => setViewMode("monthly")} className="btn-primary">
-    Monthly
-  </button>
-  <button onClick={() => setViewMode("weekly")} className="btn-primary">
-    Weekly
-  </button>
-  <button onClick={() => setStacked(!stacked)} className="btn-primary">
-    {stacked ? "Grouped" : "Stacked"}
-  </button>
-</div>
 
   {/* ================= 2-COLUMN CHART LAYOUT ================= */}
- <div className="charts-grid">
+ <div className="charts-grid" id="chart-export">
    {/* LEFT COLUMN */}
     <div className="left-column">
     {/* Monthly Income vs Expense */}
@@ -407,7 +378,7 @@ const paginatedTransactions = sortedTransactions.slice(
   {chartData.length === 0 ? (
     <p className="empty-state">No data available</p>
   ) : (
-  <ResponsiveContainer width="100%" height={320}>
+  <ResponsiveContainer width="100%" height={250}>
   <BarChart data={chartData} barGap={8} barCategoryGap="20%">
     <defs>
       <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -424,24 +395,24 @@ const paginatedTransactions = sortedTransactions.slice(
     <CartesianGrid
   strokeDasharray="3 3"
   vertical={false}
-  stroke={darkMode ? "#334155" : "#e5e7eb"}
+  stroke={theme.border}
 />
     <XAxis
   dataKey="period"
-  tick={{ fill: darkMode ? "#cbd5e1" : "#374151" }}
+  tick={{ fill: theme.subtext }}
   axisLine={false}
   tickLine={false}
 />
     <YAxis
-  tick={{ fill: darkMode ? "#cbd5e1" : "#374151" }}
+  tick={{ fill: theme.subtext }}
   axisLine={false}
   tickLine={false}
 />
     <Tooltip
       contentStyle={{
-        backgroundColor: "#fff",          
+        backgroundColor: darkMode ? "#1E293B" : "#fff",
+        border: `1px solid ${theme.border}`,         
         borderRadius: "10px",
-        border: "1px solid #e5e7eb",
         boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
       }}
       formatter={(value, name) => [
@@ -449,19 +420,21 @@ const paginatedTransactions = sortedTransactions.slice(
         name === "income" ? "Income" : "Expense",
       ]}
     />
-    <Legend />
 
+<Legend wrapperStyle={{ paddingBottom: 10 }} />
     <Bar
-      dataKey="income"
-      fill="url(#incomeGradient)"
+      dataKey="expense"
+      name="Expense"
+      fill="url(#expenseGradient)"
       radius={[8, 8, 0, 0]}
       animationDuration={1000}
       animationEasing="ease-out"
       label={renderAnimatedLabel}
     />
     <Bar
-      dataKey="expense"
-      fill="url(#expenseGradient)"
+      dataKey="income"
+      name="Income"
+      fill="url(#incomeGradient)"
       radius={[8, 8, 0, 0]}
       animationDuration={1000}
       animationEasing="ease-out"
@@ -479,31 +452,71 @@ const paginatedTransactions = sortedTransactions.slice(
     {balanceChartData.length === 0 ? (
       <p style={{ textAlign: "center", marginTop: "100px" }}>No data available</p>
     ) : (
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={250}>
         <LineChart data={balanceChartData}>
   <XAxis
-    dataKey="timestamp"
-    tickFormatter={(value) =>
-      new Date(value).toLocaleDateString("en-GB")
-    }
-  />
+  dataKey="timestamp"
+  tickFormatter={(value) =>
+    new Date(value).toLocaleDateString("en-GB")
+  }
+/>
   <YAxis />
+
+  {/* ✅ REPLACE TOOLTIP HERE */}
   <Tooltip
     labelFormatter={(value) =>
       new Date(value).toLocaleDateString("en-GB")
     }
+    formatter={(value, name) => {
+      if (name === "Balance") {
+        return [`₹${value}`, "Balance"];
+      }
+      return value;
+    }}
+    content={({ active, payload, label }) => {
+      if (active && payload && payload.length) {
+        const data = payload[0].payload;
+
+        return (
+          <div
+            style={{
+              background: darkMode ? "#1E293B" : "#fff",
+              padding: "10px",
+              borderRadius: "8px",
+              border: `1px solid ${theme.border}`,
+            }}
+          >
+            <p>
+  {new Date(label).toLocaleDateString("en-GB")}
+</p>
+            <p>
+              <strong>Balance:</strong> ₹{data.balance}
+            </p>
+            <p
+              style={{
+                color: data.change > 0 ? "green" : "red",
+              }}
+            >
+              <strong>Change:</strong> ₹{data.change}
+            </p>
+          </div>
+        );
+      }
+      return null;
+    }}
   />
+
   <Legend />
+
   <Line
-  type="monotone"
-  dataKey="balance"
-  stroke="#3b82f6"
-  strokeWidth={3}
-  dot={{ r: 5 }}
-  activeDot={{ r: 8 }}
-  animationDuration={1200}
-  style={{ filter: "drop-shadow(0px 4px 10px rgba(59,130,246,0.4))" }}
-/>
+    type="monotone"
+    dataKey="balance"
+    name="Balance"
+    stroke="#3b82f6"
+    strokeWidth={3}
+    dot={{ r: 5 }}
+    activeDot={{ r: 8 }}
+  />
 </LineChart>
       </ResponsiveContainer>
     )}
@@ -525,17 +538,17 @@ const paginatedTransactions = sortedTransactions.slice(
   ) : (
     <div className="pie-responsive-wrapper">
       {/* -------- Donut Chart -------- */}
-      <ResponsiveContainer width="100%" height={450}>
+      <ResponsiveContainer width="100%" height={348}>
         <PieChart>
           <Pie
             data={categoryChartData}
             dataKey="amount"
             nameKey="category"
-            cx="40%"
+            cx="55%"
             cy="45%"
             innerRadius={80}
             outerRadius={120}
-            paddingAngle={5}
+            paddingAngle={6}
             labelLine={false}
             label={(props) => {
                         const { cx, cy, midAngle, outerRadius, percent, index } = props;
@@ -579,15 +592,15 @@ const paginatedTransactions = sortedTransactions.slice(
                       />
                       ))}
                     </Pie>
-                    <text
-  x="40%"
+                    <text className="pie-chart-expense"
+  x="53%"
   y="46%"
   textAnchor="middle"
   dominantBaseline="middle"
   style={{
     fontSize: 18,
     fontWeight: 600,
-    fill: theme.textPrimary,
+     fill: "var(--text-primary)",  // ✅ THIS LINE
   }}
 >
   ₹{expense}
@@ -616,10 +629,6 @@ const paginatedTransactions = sortedTransactions.slice(
           </div>
         </div>
       </div>  
-
-      <button className="btn-primary" onClick={exportChart}>
-      Export Chart
-    </button>
 
       {/* ================= RECENT TRANSACTIONS ================= */}
       <div className="transactions-card">

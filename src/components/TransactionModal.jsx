@@ -81,6 +81,8 @@ const payload = {
       <div className="modal">
         <h3>New Transaction</h3>
 
+        <p className="field-label">Type</p>
+
         <div className="radio-group">
           <label>
             <input
@@ -95,6 +97,8 @@ const payload = {
           </label>
 
           <label>
+
+
             <input
               type="radio"
               value="expense"
@@ -106,6 +110,8 @@ const payload = {
             Expense
           </label>
         </div>
+
+        <p className="field-label">Details</p>
 
         <input
           type="text"
@@ -130,10 +136,10 @@ const payload = {
             value={selectedDate}
             max={todayDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            style={styles.dateInput}
           />
 
         <select
+          className="input-select"
           value={form.category}
           onChange={(e) =>
             setForm({ ...form, category: e.target.value })

@@ -17,11 +17,19 @@ API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
 
   if (token) {
-    req.headers.Authorization = token;
+    req.headers.Authorization = `Bearer ${token}`;
   }
 
   return req;
 });
+
+// ===== BUDGET APIs =====
+export const getBudget = (month) =>
+  API.get(`/budgets?month=${month}`);
+
+
+export const saveBudget = (data) =>
+  API.post("/budgets", data);
 
 // ---------------- Transactions ----------------
 

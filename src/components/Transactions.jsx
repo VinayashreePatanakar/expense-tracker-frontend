@@ -252,12 +252,15 @@ const closeFilter = () => {
       <div className="transaction-header">
         <h2>All Transactions</h2>
         <div className="header-actions">
+        <div className="search-box">
+          <i className="fa-sharp fa-solid fa-magnifying-glass"></i>
           <input
             type="text"
             placeholder="Search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
 
           <button
             className="btn-primary"
@@ -266,7 +269,7 @@ const closeFilter = () => {
               setShowModal(true);
             }}
           >
-            Add Transaction
+            <i className="fa-sharp fa-solid fa-plus"></i>
           </button>
 
           <button
@@ -293,8 +296,8 @@ const closeFilter = () => {
   <button className="btn-export" onClick={exportToExcel}>Export Excel</button>
   <button className="btn-export" onClick={exportToPDF}>Export PDF</button>
   </div>
-  <button className="filter-btn" onClick={() => setShowFilter(true)}>
-  Filter {activeFilterCount > 0 && `(${activeFilterCount})`}
+ <button className="filter-btn" onClick={() => setShowFilter(true)}>
+  Filter {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
 </button>
 </div>
 
@@ -384,6 +387,7 @@ const closeFilter = () => {
       </div>
 
       <div className="filter-body">
+        <div className="filter-group">
         <label>Category</label>
         <select
           value={filters.category}
@@ -399,6 +403,9 @@ const closeFilter = () => {
           <option value="Others">Others</option>
           <option value="General">General</option>
         </select>
+        </div>
+
+        <div className="filter-group">
 
         <label>Payment Mode</label>
         <select
@@ -413,7 +420,10 @@ const closeFilter = () => {
           <option value="credit">Credit</option>
           <option value="swish">Swish</option>
         </select>
+        </div>
 
+          <div className="filter-row">
+        <div className="filter-group">
         <label>Min Amount</label>
         <input
           type="number"
@@ -422,7 +432,9 @@ const closeFilter = () => {
             setFilters({ ...filters, minAmount: e.target.value })
           }
         />
+        </div>
 
+        <div className="filter-group">
         <label>Max Amount</label>
         <input
           type="number"
@@ -431,7 +443,10 @@ const closeFilter = () => {
             setFilters({ ...filters, maxAmount: e.target.value })
           }
         />
+        </div>
+        </div>
 
+          <div className="filter-group">
         <label>Start Date</label>
         <input
           type="date"
@@ -440,7 +455,9 @@ const closeFilter = () => {
             setFilters({ ...filters, startDate: e.target.value })
           }
         />
+        </div>
 
+          <div className="filter-group">
         <label>End Date</label>
         <input
           type="date"
@@ -449,7 +466,9 @@ const closeFilter = () => {
             setFilters({ ...filters, endDate: e.target.value })
           }
         />
+        </div>
 
+          <div className="filter-group">
         <label>Sort By</label>
         <select
           value={sortOption}
@@ -461,6 +480,8 @@ const closeFilter = () => {
           <option value="amount_desc">Amount (High → Low)</option>
           <option value="amount_asc">Amount (Low → High)</option>
         </select>
+        </div>
+
 
         <div className="filter-actions">
           <button
