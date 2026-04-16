@@ -75,7 +75,16 @@ if (passwordData.newPassword.length < 6) {
 if (passwordData.newPassword !== passwordData.confirmPassword) {
   return toast.error("Passwords do not match");
 }
-    await API.put(`/users/change-password/${user._id}`, passwordData);
+
+console.log("Sending:", {
+  oldPassword: passwordData.currentPassword,
+  newPassword: passwordData.newPassword,
+});
+
+    await API.put(`/users/change-password/${user._id}`, {
+  oldPassword: passwordData.currentPassword,
+  newPassword: passwordData.newPassword,
+});
 
     toast.success("Password updated!");
 
@@ -87,6 +96,7 @@ if (passwordData.newPassword !== passwordData.confirmPassword) {
 });
 
   } catch (err) {
+    console.log("ERROR:", err.response?.data);
     toast.error(err.response?.data?.message || "Error updating password");
   }
 };
@@ -250,10 +260,6 @@ useEffect(() => {
     </div>
 
     {capsLock && <p className="caps-warning">⚠️ Caps Lock is ON</p>}
-
-    {isPasswordCorrect === false && (
-      <p className="error-text">Wrong password</p>
-    )}
   </div>
 
   {/* NEW PASSWORD */}
