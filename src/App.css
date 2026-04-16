@@ -946,7 +946,7 @@ select {
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
-input[type:number]{
+input[type="number"]{
   width: 100%;
 }
 
@@ -1888,5 +1888,192 @@ margin-top:20px;
 }
 
 .avatar-wrapper input {
+  margin-top: 10px;
+}
+
+.profile-card input {
+  margin-bottom: 10px;
+  padding: 8px;
+  width: 100%;
+}
+
+.btn-primary {
+  margin-top: 10px;
+}
+
+/* INPUT GROUP */
+.input-group {
+  margin-bottom: 18px;
+}
+
+.input-group label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* PASSWORD WRAPPER */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* 👁 ICON */
+.password-wrapper i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: 0.2s;
+}
+
+.password-wrapper i:hover {
+  color: var(--text-primary);
+}
+
+/* 💪 STRENGTH BAR */
+.strength-bar {
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  width: 40%;
+  transition: 0.3s;
+}
+
+.strength-fill.weak {
+  width: 30%;
+  background: #ef4444;
+}
+
+.strength-fill.medium {
+  width: 60%;
+  background: #f59e0b;
+}
+
+.strength-fill.strong {
+  width: 100%;
+  background: #22c55e;
+}
+
+/* ERROR TEXT */
+.error-text {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* BUTTON FULL WIDTH */
+.full-btn {
+  width: 100%;
+  margin-top: 10px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.warning-text {
+  color: #f59e0b;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.tooltip-wrapper {
+  position: relative;
+}
+
+.password-tooltip {
+  position: absolute;
+  top: 45px;
+  left: 0;
+  width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.password-tooltip p {
+  margin: 4px 0;
+  color: var(--text-muted);
+}
+
+.password-tooltip .valid {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.password-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.password-wrapper input {
+  flex: 1;
+}
+
+.password-wrapper i {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+}
+
+.strength-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  margin-top: 6px;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+.strength-fill.weak { width: 30%; background: #ef4444; }
+.strength-fill.medium { width: 60%; background: #f59e0b; }
+.strength-fill.strong { width: 100%; background: #22c55e; }
+
+.error-text {
+  color: #ef4444;
+  font-size: 13px;
+}
+
+.caps-warning {
+  color: #f59e0b;
+  font-size: 13px;
+}
+
+.password-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.full-btn {
+  width: 100%;
   margin-top: 10px;
 }

@@ -8,6 +8,108 @@ const Profile = () => {
 
   const BASE_URL = import.meta.env.VITE_API_URL;
 
+  const [showCurrent, setShowCurrent] = useState(false);
+const [showNew, setShowNew] = useState(false);
+const [showConfirm, setShowConfirm] = useState(false);
+const [capsLock, setCapsLock] = useState(false);
+const [isPasswordCorrect, setIsPasswordCorrect] = useState(null);
+const [showPassword, setShowPassword] = useState(false);
+
+const [passwordData, setPasswordData] = useState({
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+
+const getStrengthClass = (password) => {
+  if (!password) return "";
+  if (password.length < 6) return "weak";
+  if (password.match(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/))
+    return "strong";
+  return "medium";
+};
+
+
+const isPasswordValid =
+  passwordData.currentPassword &&
+  passwordData.newPassword.length >= 6 &&
+  passwordData.newPassword === passwordData.confirmPassword &&
+  isPasswordCorrect;
+
+  const handleKeyEvent = (e) => {
+  setCapsLock(e.getModifierState("CapsLock"));
+};
+
+const generateStrongPassword = () => {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&";
+  let pass = "";
+  for (let i = 0; i < 12; i++) {
+    pass += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  setPasswordData({
+    ...passwordData,
+    newPassword: pass,
+    confirmPassword: pass,
+  });
+
+  toast.success("Strong password generated!");
+};
+
+const handlePasswordChange = (e) => {
+  setPasswordData({
+    ...passwordData,
+    [e.target.name]: e.target.value,
+  });
+};
+
+useEffect(() => {
+  if (!passwordData.currentPassword || !user._id) return;
+
+  const delay = setTimeout(async () => {
+    try {
+      await API.post("/users/verify-password", {
+        userId: user._id,
+        password: passwordData.currentPassword,
+      });
+      setIsPasswordCorrect(true);
+    } catch {
+      setIsPasswordCorrect(false);
+    }
+  }, 600);
+
+  return () => clearTimeout(delay);
+}, [passwordData.currentPassword, user._id]);
+
+const handleChangePassword = async () => {
+  try {
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+  return toast.error("Please fill all fields");
+}
+
+if (passwordData.newPassword.length < 6) {
+  return toast.error("Password must be at least 6 characters");
+}
+
+if (passwordData.newPassword !== passwordData.confirmPassword) {
+  return toast.error("Passwords do not match");
+}
+    await API.put(`/users/change-password/${user._id}`, passwordData);
+
+    toast.success("Password updated!");
+
+    // ✅ reset fields
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+    });
+
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Error updating password");
+  }
+};
+
   /* ================= FETCH USER ================= */
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
@@ -72,7 +174,7 @@ const getProfileImage = () => {
   }
 
   if (user.profilePic) {
-    return `http://localhost:5000${user.profilePic}`; // 👈 HARD FIX
+    return `${import.meta.env.VITE_API_URL.replace("/api", "")}${user.profilePic}`;
   }
 
   return "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -120,7 +222,7 @@ useEffect(() => {
           disabled={!editMode}
         />
 
-        {/* ✅ CURRENCY DROPDOWN */}
+         {/* ✅ CURRENCY DROPDOWN */}
         <select
           name="currency"
           value={user.currency || "INR"}
@@ -139,6 +241,119 @@ useEffect(() => {
             <button onClick={handleSave}>Save</button>
           </>
         )}
+
+<div className="profile-card">
+  <h3>🔐 Change Password</h3>
+
+  {/* CURRENT PASSWORD */}
+  <div className="input-group">
+    <label>Current Password</label>
+    <div className="password-wrapper">
+      <input
+        type={showCurrent ? "text" : "password"}
+        value={passwordData.currentPassword}
+        onChange={(e) =>
+          setPasswordData({
+            ...passwordData,
+            currentPassword: e.target.value,
+          })
+        }
+        onKeyUp={handleKeyEvent}
+        onKeyDown={handleKeyEvent}
+        placeholder="Enter current password"
+      />
+      <i
+        className={`fa ${showCurrent ? "fa-eye-slash" : "fa-eye"}`}
+        onClick={() => setShowCurrent(!showCurrent)}
+      />
+    </div>
+
+    {capsLock && <p className="caps-warning">⚠️ Caps Lock is ON</p>}
+
+    {isPasswordCorrect === false && (
+      <p className="error-text">Wrong password</p>
+    )}
+  </div>
+
+  {/* NEW PASSWORD */}
+  <div className="input-group">
+    <label>New Password</label>
+    <div className="password-wrapper">
+      <input
+        type={showNew ? "text" : "password"}
+        value={passwordData.newPassword}
+        onChange={(e) =>
+          setPasswordData({
+            ...passwordData,
+            newPassword: e.target.value,
+          })
+        }
+        onKeyUp={handleKeyEvent}
+        onKeyDown={handleKeyEvent}
+        placeholder="Enter new password"
+      />
+      <i
+        className={`fa ${showNew ? "fa-eye-slash" : "fa-eye"}`}
+        onClick={() => setShowNew(!showNew)}
+      />
+    </div>
+
+    {/* Strength */}
+    <div className="strength-bar">
+      <div
+        className={`strength-fill ${getStrengthClass(
+          passwordData.newPassword
+        )}`}
+      />
+    </div>
+
+    {/* Tooltip */}
+    <small className="password-hint">
+      Must include uppercase, number, symbol
+    </small>
+
+    {/* AI Suggestion */}
+    <button className="btn-secondary" onClick={generateStrongPassword}>
+      💡 Suggest Strong Password
+    </button>
+  </div>
+
+  {/* CONFIRM PASSWORD */}
+  <div className="input-group">
+    <label>Confirm Password</label>
+    <div className="password-wrapper">
+      <input
+        type={showConfirm ? "text" : "password"}
+        value={passwordData.confirmPassword}
+        onChange={(e) =>
+          setPasswordData({
+            ...passwordData,
+            confirmPassword: e.target.value,
+          })
+        }
+        placeholder="Confirm password"
+      />
+      <i
+        className={`fa ${showConfirm ? "fa-eye-slash" : "fa-eye"}`}
+        onClick={() => setShowConfirm(!showConfirm)}
+      />
+    </div>
+
+    {passwordData.confirmPassword &&
+      passwordData.confirmPassword !== passwordData.newPassword && (
+        <p className="error-text">Passwords do not match</p>
+      )}
+  </div>
+
+  {/* BUTTON */}
+  <button
+    className="btn-primary full-btn"
+    onClick={handleChangePassword}
+    disabled={!isPasswordValid}
+  >
+    Update Password
+  </button>
+</div>
       </div>
     </div>
   );
