@@ -1,186 +1,147 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { toast } from "react-toastify";
+import { API } from "../services/api";
 
 const Profile = () => {
   const [user, setUser] = useState({});
   const [editMode, setEditMode] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-  });
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
-  /* =========================
-     Fetch User Data
-  ========================== */
+  /* ================= FETCH USER ================= */
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
-    const token = localStorage.getItem("token");
-    if (userData && userData._id && token) {
-      axios
-        .get(`http://localhost:5000/api/users/${userData._id}`, {
-          headers: { Authorization: `Bearer ${token}` },
+
+    if (userData?._id) {
+      API.get(`/users/${userData._id}`)
+        .then((res) => {
+          setUser(res.data);
         })
-        .then((res) => setUser(res.data))
-        .catch((err) => console.error(err));
+        .catch(console.error);
     }
   }, []);
 
-  /* =========================
-     Handle Input Change
-  ========================== */
+  /* ================= HANDLE INPUT ================= */
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
 
-  const handlePasswordChange = (e) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
-  };
+  /* ================= HANDLE SAVE ================= */
+const handleSave = async () => {
+  try {
+    const formData = new FormData();
 
-  /* =========================
-     Save Profile
-  ========================== */
-  const handleSave = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await axios.put(
-        `http://localhost:5000/api/users/${user._id}`,
-        user,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setUser(res.data);
-      setEditMode(false);
-      alert("Profile updated successfully!");
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    formData.append("name", user.name);
+    formData.append("email", user.email);
+    formData.append("currency", user.currency);
 
-  /* =========================
-     Change Password
-  ========================== */
-  const handleChangePassword = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/api/users/change-password/${user._id}`,
-        passwordData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      alert("Password changed successfully!");
-      setPasswordData({ currentPassword: "", newPassword: "" });
-    } catch (err) {
-      alert(err.response.data.message);
+    if (user.profilePic instanceof File) {
+      formData.append("profilePic", user.profilePic);
     }
-  };
+
+    const res = await API.put(`/users/${user._id}`, formData);
+
+    console.log("UPDATED USER:", res.data);
+
+    // ✅ FORCE STATE UPDATE
+    setUser({ ...res.data });
+
+    // ✅ UPDATE LOCAL STORAGE
+    localStorage.setItem("user", JSON.stringify({
+      ...JSON.parse(localStorage.getItem("user")),
+      ...res.data
+    }));
+
+    setEditMode(false);
+
+    // ✅ RE-FETCH FROM DB (VERY IMPORTANT FIX)
+    const fresh = await API.get(`/users/${user._id}`);
+    setUser(fresh.data);
+
+    toast.success("Profile updated!");
+  } catch (err) {
+    console.error(err);
+    toast.error("Update failed");
+  }
+};
+
+  /* ================= PROFILE IMAGE ================= */
+const getProfileImage = () => {
+  if (user.profilePic instanceof File) {
+    return URL.createObjectURL(user.profilePic);
+  }
+
+  if (user.profilePic) {
+    return `http://localhost:5000${user.profilePic}`; // 👈 HARD FIX
+  }
+
+  return "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+};
+
+useEffect(() => {
+  console.log("USER STATE UPDATED:", user);
+}, [user]); 
 
   return (
-    <div style={containerStyle}>
-      <h2>👤 Profile Settings</h2>
+    <div className="profile-container">
+      
+      {/* PROFILE HEADER */}
+      <div className="profile-header">
+        <img src={getProfileImage()} className="profile-avatar" />
 
-      {/* Name */}
-      <input
-        type="text"
-        name="name"
-        value={user.name || ""}
-        onChange={handleChange}
-        disabled={!editMode}
-        placeholder="Name"
-        style={inputStyle}
-      />
+        {editMode && (
+          <input
+            type="file"
+            onChange={(e) =>
+              setUser({ ...user, profilePic: e.target.files[0] })
+            }
+          />
+        )}
 
-      {/* Email */}
-      <input
-        type="email"
-        name="email"
-        value={user.email || ""}
-        onChange={handleChange}
-        disabled={!editMode}
-        placeholder="Email"
-        style={inputStyle}
-      />
-
-      {!editMode ? (
-        <button style={buttonStyle} onClick={() => setEditMode(true)}>
-          Edit Profile
-        </button>
-      ) : (
-        <button style={buttonStyle} onClick={handleSave}>
-          Save Profile
-        </button>
-      )}
-
-      <hr style={{ margin: "30px 0" }} />
-
-      {/* Change Password */}
-      <h3>🔐 Change Password</h3>
-
-      <input
-        type={showPassword ? "text" : "password"}
-        name="currentPassword"
-        placeholder="Current Password"
-        value={passwordData.currentPassword}
-        onChange={handlePasswordChange}
-        style={inputStyle}
-      />
-
-      <input
-        type={showPassword ? "text" : "password"}
-        name="newPassword"
-        placeholder="New Password"
-        value={passwordData.newPassword}
-        onChange={handlePasswordChange}
-        style={inputStyle}
-      />
-
-      <div style={{ marginBottom: "10px" }}>
-        <input
-          type="checkbox"
-          onChange={() => setShowPassword(!showPassword)}
-        />{" "}
-        Show Password
+        <h2>{user.name}</h2>
+        <p>{user.email}</p>
       </div>
 
-      <button style={buttonStyle} onClick={handleChangePassword}>
-        Update Password
-      </button>
+      {/* PERSONAL INFO */}
+      <div className="profile-card">
+        <h3>Personal Info</h3>
+
+        <input
+          name="name"
+          value={user.name || ""}
+          onChange={handleChange}
+          disabled={!editMode}
+        />
+
+        <input
+          name="email"
+          value={user.email || ""}
+          onChange={handleChange}
+          disabled={!editMode}
+        />
+
+        {/* ✅ CURRENCY DROPDOWN */}
+        <select
+          name="currency"
+          value={user.currency || "INR"}
+          onChange={handleChange}
+          disabled={!editMode}
+        >
+          <option value="INR">₹ INR</option>
+          <option value="USD">$ USD</option>
+        </select>
+
+        {!editMode ? (
+          <button onClick={() => setEditMode(true)}>Edit</button>
+        ) : (
+          <>
+            <button onClick={() => setEditMode(false)}>Cancel</button>
+            <button onClick={handleSave}>Save</button>
+          </>
+        )}
+      </div>
     </div>
   );
-};
-
-/* =========================
-   Styles
-========================= */
-const containerStyle = {
-  maxWidth: "500px",
-  margin: "auto",
-  background: "#fff",
-  padding: "30px",
-  borderRadius: "10px",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px",
-  marginBottom: "15px",
-  borderRadius: "6px",
-  border: "1px solid #ccc",
-};
-
-const buttonStyle = {
-  padding: "10px",
-  width: "100%",
-  backgroundColor: "#2563eb",
-  color: "#fff",
-  border: "none",
-  borderRadius: "6px",
-  cursor: "pointer",
 };
 
 export default Profile;

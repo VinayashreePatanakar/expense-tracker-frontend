@@ -47,3 +47,4 @@ export const updateTransaction = (id, data) =>
 
 export const getAllTransactions = () =>
   API.get("/transactions");
+

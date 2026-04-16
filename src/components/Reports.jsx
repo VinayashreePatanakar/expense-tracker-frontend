@@ -3,8 +3,41 @@ import { getBudget, saveBudget } from "../services/api";
 
 const Reports = ({ transactions = [] }) => {
   const [budgets, setBudgets] = useState({});
-  const [totalBudget, setTotalBudget] = useState(0);
   const [editMode, setEditMode] = useState(false);
+
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("none"); // spent | remaining | budget
+  const [sortOrder, setSortOrder] = useState("desc"); // asc | desc
+
+  const [editingRows, setEditingRows] = useState({});
+
+const toggleEditRow = (cat) => {
+  setEditingRows((prev) => ({
+    ...prev,
+    [cat]: true, // ✅ force edit mode ON
+  }));
+};
+
+const saveSingleRow = async (cat) => {
+  try {
+    const payload = {
+      month: useSameBudget ? "default" : selectedMonth,
+      totalBudget,
+      categories: budgets,
+    };
+
+    await saveBudget(payload);
+
+    // ✅ disable edit after save
+    setEditingRows((prev) => ({
+      ...prev,
+      [cat]: false,
+    }));
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // ✅ Dynamic categories from transactions
   const categories = useMemo(() => {
@@ -20,6 +53,10 @@ const Reports = ({ transactions = [] }) => {
   );
 
   const [useSameBudget, setUseSameBudget] = useState(true);
+
+  const totalBudget = useMemo(() => {
+  return Object.values(budgets).reduce((sum, val) => sum + val, 0);
+}, [budgets]);
 
   // ✅ FIXED DATE + SPENT CALCULATION
   const spent = useMemo(() => {
@@ -37,18 +74,66 @@ const Reports = ({ transactions = [] }) => {
     return totals;
   }, [transactions, selectedMonth]);
 
+  const tableData = useMemo(() => {
+  let data = categories.map((cat) => {
+    const used = spent[cat] || 0;
+    const limit = budgets[cat] || 0;
+    const remaining = limit - used;
+
+    return { cat, used, limit, remaining };
+  });
+
+  // 🔍 FILTER
+  if (search) {
+    data = data.filter((item) =>
+      item.cat.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+
+  // 🔽 SORT
+  if (sortBy !== "none") {
+    data.sort((a, b) => {
+      const valA = a[sortBy];
+      const valB = b[sortBy];
+
+      return sortOrder === "asc" ? valA - valB : valB - valA;
+    });
+  }
+
+  return data;
+}, [categories, spent, budgets, search, sortBy, sortOrder]);
+
   // ✅ FETCH BUDGET FROM DB
 
 const fetchBudget = useCallback(async () => {
   try {
-    const res = await getBudget(
-      useSameBudget ? "default" : selectedMonth
-    );
+    const key = useSameBudget ? "default" : selectedMonth;
+
+    let res = await getBudget(key);
+
+    // 🧠 If NO data for that month → fallback to default
+    if (!res.data && !useSameBudget) {
+      const defaultRes = await getBudget("default");
+
+      if (defaultRes.data) {
+        setBudgets(defaultRes.data.categories || {});
+
+        // 🔥 AUTO-SAVE into that month (important)
+        await saveBudget({
+          month: selectedMonth,
+          totalBudget: Object.values(defaultRes.data.categories || {})
+            .reduce((a, b) => a + b, 0),
+          categories: defaultRes.data.categories,
+        });
+
+        return;
+      }
+    }
 
     if (res.data) {
       setBudgets(res.data.categories || {});
-      setTotalBudget(res.data.totalBudget || 0);
     }
+
   } catch (err) {
     console.error(err);
   }
@@ -60,10 +145,6 @@ useEffect(() => {
 
   const handleBudgetChange = (category, value) => {
     setBudgets({ ...budgets, [category]: parseFloat(value) || 0 });
-  };
-
-  const handleTotalChange = (value) => {
-    setTotalBudget(parseFloat(value) || 0);
   };
 
   // ✅ SAVE
@@ -89,50 +170,35 @@ const saveBudgets = async () => {
   const totalSpent = Object.values(spent).reduce((a, b) => a + b, 0);
   const remainingTotal = totalBudget - totalSpent;
 
+  const alerts = useMemo(() => {
+  const messages = [];
+
+  tableData.forEach(({ cat, used, limit }) => {
+    if (!limit) return;
+
+    const percent = (used / limit) * 100;
+
+    if (percent > 100) {
+      messages.push(`🚨 ${cat}: Overspent by ₹${(used - limit).toFixed(0)}`);
+    } else if (percent > 80) {
+      messages.push(`⚠️ ${cat}: ${percent.toFixed(0)}% used`);
+    }
+  });
+
+  return messages;
+}, [tableData]);
+
   return (
     <div className="budget-container">
       {/* HEADER */}
       <div className="budget-header">
-        <h2>💰 Budget Dashboard</h2>
-
-        {!editMode ? (
-          <button className="btn-primary" onClick={() => setEditMode(true)}>
-            Edit Budget
-          </button>
-        ) : (
-          <div className="action-buttons">
-            <button className="btn-primary" onClick={saveBudgets}>
-              Save
-            </button>
-            <button className="btn-cancel" onClick={() => setEditMode(false)}>
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* MONTH + TOGGLE */}
-      <div className="budget-controls">
-        <input
-          type="month"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-        />
-
-        <label>
-          <input
-            type="checkbox"
-            checked={useSameBudget}
-            onChange={() => setUseSameBudget(!useSameBudget)}
-          />
-          Same budget for all months
-        </label>
+        <h2>Budget Dashboard</h2>
       </div>
 
       {/* SUMMARY */}
       <div className="budget-summary">
         <div className="budget-box total">
-          <h4>Total</h4>
+          <h4>Total Budget</h4>
           <p>₹{totalBudget}</p>
         </div>
 
@@ -147,84 +213,170 @@ const saveBudgets = async () => {
         </div>
       </div>
 
-      {/* TOTAL BUDGET */}
-      <div className="budget-total-card">
-        <h3>Total Monthly Budget</h3>
-
-        {editMode ? (
-          <input
-            type="number"
-            value={totalBudget}
-            onChange={(e) => handleTotalChange(e.target.value)}
-          />
-        ) : (
-          <h1>₹ {totalBudget.toFixed(2)}</h1>
-        )}
-      </div>
-
       {/* CATEGORY GRID */}
-      <div className="budget-grid">
-        {categories.map((cat) => {
-          const used = spent[cat] || 0;
-          const limit = budgets[cat] || 0;
+      <div className="budget-table-container">
+  {/* 🔍 SEARCH + SORT */}
+ <div className="table-controls">
 
-          const remaining = limit - used;
-          const percent = limit ? (used / limit) * 100 : 0;
-          const isOver = used > limit;
-
-          return (
-            <div
-              key={cat}
-              className={`budget-card ${isOver ? "over-budget" : ""}`}
-            >
-              <div className="card-header">
-                <h4>{cat}</h4>
-                <span className={isOver ? "danger-text" : ""}>
-                  {percent.toFixed(0)}%
-                </span>
-              </div>
-
-              {/* Budget */}
-              {editMode ? (
-                <input
-                  type="number"
-                  value={limit}
-                  onChange={(e) =>
-                    handleBudgetChange(cat, e.target.value)
-                  }
-                />
-              ) : (
-                <p className="amount">₹ {limit.toFixed(2)}</p>
-              )}
-
-              {/* Spent */}
-              <p className="spent-text">
-                Spent: ₹ {used.toFixed(2)}
-              </p>
-
-              {/* Remaining */}
-              <p className={`remaining ${isOver ? "danger-text" : ""}`}>
-                Remaining: ₹ {remaining.toFixed(2)}
-              </p>
-
-              {/* Progress */}
-              <div className="progress">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${Math.min(percent, 100)}%` }}
-                />
-              </div>
-
-              {/* Warning */}
-              {isOver && (
-                <p className="warning-text">
-                  ⚠ Over Budget by ₹ {(used - limit).toFixed(2)}
-                </p>
-              )}
-            </div>
-          );
-        })}
+    {/* LEFT SECTION */}
+    <div className="controls-left">
+      <div className="month-picker">
+        <label>Month</label>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+        />
       </div>
+
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={useSameBudget}
+          onChange={() => setUseSameBudget(!useSameBudget)}
+        />
+        <span style={{ marginTop: "20px" }}>Same budget</span>
+      </label>
+    </div>
+
+    {/* RIGHT SECTION */}
+    <div className="controls-right">
+
+      <div className="search-box">
+        <i className="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Search category..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value)}
+      >
+        <option value="none">Sort</option>
+        <option value="used">Spent</option>
+        <option value="remaining">Remaining</option>
+        <option value="limit">Budget</option>
+      </select>
+
+      <button
+        className="sort-btn"
+        onClick={() =>
+          setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+        }
+      >
+        {sortOrder === "asc" ? "↑" : "↓"}
+      </button>
+
+    </div>
+
+  </div>
+   {/* {alerts.length > 0 && (
+  <div className="alerts-box">
+    {alerts.map((msg, i) => (
+      <p key={i}>{msg}</p>
+    ))}
+  </div>
+)}
+
+  {/* 📊 TABLE */}
+  <table className="budget-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Budget</th>
+        <th>Spent</th>
+        <th>Remaining</th>
+        <th>%</th>
+        <th>Edit</th>
+        <th>Save</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {tableData.map(({ cat, used, limit, remaining }) => {
+        const percent = limit ? (used / limit) * 100 : 0;
+
+        let statusClass = "safe";
+        if (percent > 100) statusClass = "danger";
+        else if (percent > 80) statusClass = "warning";
+
+        return (
+          <tr key={cat} className={`row-${statusClass}`}>
+  <td>{cat}</td>
+
+  {/* BUDGET INPUT */}
+<td>
+  {editingRows[cat] ? (
+    <input
+      type="number"
+      value={limit}
+      onChange={(e) =>
+        handleBudgetChange(cat, e.target.value)
+      }
+    />
+  ) : (
+    `₹ ${limit.toFixed(2)}`
+  )}
+</td>
+
+  <td>₹ {used.toFixed(2)}</td>
+  <td>
+  ₹ {remaining.toFixed(2)}
+
+  {percent > 100 && (
+    <div className="inline-alert danger">
+      Overspent
+    </div>
+  )}
+
+  {percent > 80 && percent <= 100 && (
+    <div className="inline-alert warning">
+      {percent.toFixed(0)}% used
+    </div>
+  )}
+</td>
+
+  {/* 📊 PROGRESS BAR */}
+  <td style={{ width: "180px" }}>
+    <div className="table-progress">
+      <div
+        className={`table-progress-fill ${statusClass}`}
+        style={{ width: `${Math.min(percent, 100)}%` }}
+      />
+    </div>
+    <small>{percent.toFixed(0)}%</small>
+  </td>
+
+  {/* ✏️ EDIT BUTTON */}
+ <td>
+  <button
+    className="edit-btn"
+    onClick={() => toggleEditRow(cat)}
+    disabled={editingRows[cat]}  // ✅ disable if already editing
+  >
+    ✏️
+  </button>
+</td>
+
+<td>
+  <button
+    className="save-btn"
+    onClick={() => saveSingleRow(cat)}
+    disabled={!editingRows[cat]} // ✅ enable ONLY when editing
+  >
+    💾
+  </button>
+</td>
+</tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
     </div>
   );
 };
