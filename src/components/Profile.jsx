@@ -12,8 +12,6 @@ const Profile = () => {
 const [showNew, setShowNew] = useState(false);
 const [showConfirm, setShowConfirm] = useState(false);
 const [capsLock, setCapsLock] = useState(false);
-const [isPasswordCorrect, setIsPasswordCorrect] = useState(null);
-const [showPassword, setShowPassword] = useState(false);
 
 const [passwordData, setPasswordData] = useState({
   currentPassword: "",
@@ -33,8 +31,7 @@ const getStrengthClass = (password) => {
 const isPasswordValid =
   passwordData.currentPassword &&
   passwordData.newPassword.length >= 6 &&
-  passwordData.newPassword === passwordData.confirmPassword &&
-  isPasswordCorrect;
+  passwordData.newPassword === passwordData.confirmPassword;
 
   const handleKeyEvent = (e) => {
   setCapsLock(e.getModifierState("CapsLock"));
@@ -64,23 +61,6 @@ const handlePasswordChange = (e) => {
   });
 };
 
-useEffect(() => {
-  if (!passwordData.currentPassword || !user._id) return;
-
-  const delay = setTimeout(async () => {
-    try {
-      await API.post("/users/verify-password", {
-        userId: user._id,
-        password: passwordData.currentPassword,
-      });
-      setIsPasswordCorrect(true);
-    } catch {
-      setIsPasswordCorrect(false);
-    }
-  }, 600);
-
-  return () => clearTimeout(delay);
-}, [passwordData.currentPassword, user._id]);
 
 const handleChangePassword = async () => {
   try {
@@ -100,10 +80,11 @@ if (passwordData.newPassword !== passwordData.confirmPassword) {
     toast.success("Password updated!");
 
     // ✅ reset fields
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-    });
+   setPasswordData({
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
 
   } catch (err) {
     toast.error(err.response?.data?.message || "Error updating password");
