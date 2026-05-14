@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { API } from "../services/api";
+import Cropper from "react-easy-crop";
 
-const Profile = () => {
-  const [user, setUser] = useState({});
+const Profile = ({user, setUser}) => {
   const [editMode, setEditMode] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -13,6 +13,12 @@ const Profile = () => {
 const [showNew, setShowNew] = useState(false);
 const [showConfirm, setShowConfirm] = useState(false);
 const [capsLock, setCapsLock] = useState(false);
+
+const [imageSrc, setImageSrc] = useState(null);
+const [crop, setCrop] = useState({ x: 0, y: 0 });
+const [zoom, setZoom] = useState(1);
+const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+const [showCropper, setShowCropper] = useState(false);
 
 const [passwordData, setPasswordData] = useState({
   currentPassword: "",
@@ -62,6 +68,18 @@ const handlePasswordChange = (e) => {
   });
 };
 
+const onSelectFile = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    setImageSrc(reader.result);
+    setShowCropper(true);
+  };
+  reader.readAsDataURL(file);
+};
+
 
 const handleChangePassword = async () => {
   try {
@@ -77,10 +95,10 @@ if (passwordData.newPassword !== passwordData.confirmPassword) {
   return toast.error("Passwords do not match");
 }
 
-console.log("Sending:", {
+/*console.log("Sending:", {
   oldPassword: passwordData.currentPassword,
   newPassword: passwordData.newPassword,
-});
+});*/
 
     await API.put(`/users/change-password/${user._id}`, {
   oldPassword: passwordData.currentPassword,
@@ -97,23 +115,10 @@ console.log("Sending:", {
 });
 
   } catch (err) {
-    console.log("ERROR:", err.response?.data);
+    //console.log("ERROR:", err.response?.data);
     toast.error(err.response?.data?.message || "Error updating password");
   }
 };
-
-  /* ================= FETCH USER ================= */
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user"));
-
-    if (userData?._id) {
-      API.get(`/users/${userData._id}`)
-        .then((res) => {
-          setUser(res.data);
-        })
-        .catch(console.error);
-    }
-  }, []);
 
   /* ================= HANDLE INPUT ================= */
   const handleChange = (e) => {
@@ -135,22 +140,13 @@ const handleSave = async () => {
 
     const res = await API.put(`/users/${user._id}`, formData);
 
-    console.log("UPDATED USER:", res.data);
+    // ✅ Update global state
+    setUser(res.data);
 
-    // ✅ FORCE STATE UPDATE
-    setUser({ ...res.data });
-
-    // ✅ UPDATE LOCAL STORAGE
-    localStorage.setItem("user", JSON.stringify({
-      ...JSON.parse(localStorage.getItem("user")),
-      ...res.data
-    }));
+    // ✅ Sync localStorage
+    localStorage.setItem("user", JSON.stringify(res.data));
 
     setEditMode(false);
-
-    // ✅ RE-FETCH FROM DB (VERY IMPORTANT FIX)
-    const fresh = await API.get(`/users/${user._id}`);
-    setUser(fresh.data);
 
     toast.success("Profile updated!");
   } catch (err) {
@@ -176,10 +172,54 @@ useEffect(() => {
   console.log("USER STATE UPDATED:", user);
 }, [user]); 
 
+const getCroppedImg = async (imageSrc, crop) => {
+  const image = new Image();
+  image.src = imageSrc;
+
+  await new Promise((resolve) => (image.onload = resolve));
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = crop.width;
+  canvas.height = crop.height;
+
+  ctx.drawImage(
+    image,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+    0,
+    0,
+    crop.width,
+    crop.height
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      const file = new File([blob], "profile.jpg", {
+        type: "image/jpeg",
+      });
+      resolve(file);
+    }, "image/jpeg");
+  });
+};
+
+const handleCropSave = async () => {
+  const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels);
+
+  setUser({
+    ...user,
+    profilePic: croppedFile,
+  });
+
+  setShowCropper(false);
+};
+
   return (
   <div className="profile-container">
-
-    {/* HEADER */}
+        {/* 🔥 HEADER */}
     <div className="profile-header modern">
       <div className="avatar-upload">
         <img src={getProfileImage()} className="profile-avatar" />
@@ -193,17 +233,37 @@ useEffect(() => {
               id="fileUpload"
               type="file"
               hidden
-              onChange={(e) =>
-                setUser({ ...user, profilePic: e.target.files[0] })
-              }
+              onChange={onSelectFile}
             />
           </>
         )}
       </div>
 
-      <div>
+{showCropper && (
+  <div className="crop-modal">
+    <div className="crop-container">
+      <Cropper
+        image={imageSrc}
+        crop={crop}
+        zoom={zoom}
+        aspect={1}
+        onCropChange={setCrop}
+        onZoomChange={setZoom}
+        onCropComplete={(croppedArea, croppedPixels) =>
+          setCroppedAreaPixels(croppedPixels)
+        }
+      />
+    </div>
+
+    <div className="crop-actions">
+      <button className="btn-primary" onClick={handleCropSave}>Save</button>
+      <button className="btn-cancel" onClick={() => setShowCropper(false)}>Cancel</button>
+    </div>
+  </div>
+)}
+
+      <div className="profile-name">
         <h2>{user.name}</h2>
-        <p className="subtitle">{user.email}</p>
       </div>
     </div>
 
@@ -211,24 +271,7 @@ useEffect(() => {
     <div className="profile-section">
       <div className="profile-card">
         <h3 className="card-title">Personal Information</h3>
-
-        {!editMode ? (
-          <button className="btn-primary" onClick={() => setEditMode(true)}>
-            Edit
-          </button>
-        ) : (
-          <div className="action-buttons">
-            <button className="btn-cancel" onClick={() => setEditMode(false)}>
-              Cancel
-            </button>
-            <button className="btn-primary" onClick={handleSave}>
-              Save
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="profile-grid">
+        <div className="profile-grid">
         <div>
           <label>Name</label>
           <input
@@ -262,19 +305,37 @@ useEffect(() => {
           </select>
         </div>
       </div>
+
+        {!editMode ? (
+          <button className="btn-primary" onClick={() => setEditMode(true)}>
+            Edit
+          </button>
+        ) : (
+          <div className="action-buttons">
+            <button className="btn-cancel" onClick={() => setEditMode(false)}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={handleSave}>
+              Save
+            </button>
+          </div>
+        )}
+      </div>
     </div>
 
     {/* PASSWORD SECTION */}
     <div className="profile-card password-card">
       <div className="card-header">
-        <h3>🔐 Security</h3>
+        <h3>Security</h3>
       </div>
 
       <div className="password-section">
 
         {/* CURRENT */}
         <div className="input-group">
+          <div className="password-label1">
           <label>Current Password</label>
+          </div>
           <div className="password-wrapper">
             <input
               type={showCurrent ? "text" : "password"}
@@ -285,7 +346,7 @@ useEffect(() => {
               onKeyDown={handleKeyEvent}
             />
             <i
-              className={`fa ${showCurrent ? "fa-eye-slash" : "fa-eye"}`}
+              className={`fa ${showCurrent ? "fa-eye-slash" : "fa-eye"} eye-icon-style`} 
               onClick={() => setShowCurrent(!showCurrent)}
             />
           </div>
@@ -294,8 +355,10 @@ useEffect(() => {
 
         {/* NEW */}
         <div className="input-group">
-          <label>New Password</label>
-          <div className="password-wrapper">
+          <div className="password-label2">
+            <label>New Password</label>
+          </div>
+          <div className="password-wrapper input-pass">
             <input
               type={showNew ? "text" : "password"}
               value={passwordData.newPassword}
@@ -303,7 +366,7 @@ useEffect(() => {
               name="newPassword"
             />
             <i
-              className={`fa ${showNew ? "fa-eye-slash" : "fa-eye"}`}
+              className={`fa ${showNew ? "fa-eye-slash" : "fa-eye"} eye-icon-style`}
               onClick={() => setShowNew(!showNew)}
             />
           </div>
@@ -322,7 +385,9 @@ useEffect(() => {
 
         {/* CONFIRM */}
         <div className="input-group">
-          <label>Confirm Password</label>
+          <div className="password-label">
+            <label>Confirm Password</label>
+          </div>
           <div className="password-wrapper">
             <input
               type={showConfirm ? "text" : "password"}
@@ -331,7 +396,7 @@ useEffect(() => {
               name="confirmPassword"
             />
             <i
-              className={`fa ${showConfirm ? "fa-eye-slash" : "fa-eye"}`}
+              className={`fa ${showConfirm ? "fa-eye-slash" : "fa-eye"} eye-icon-style`}
               onClick={() => setShowConfirm(!showConfirm)}
             />
           </div>

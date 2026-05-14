@@ -7,8 +7,10 @@ import "../App.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { CATEGORIES } from "../constants/categories";
+import { getCurrencySymbol } from "../utils/currency";
 
-const Transactions = ({ transactions, setTransactions }) => {
+const Transactions = ({ transactions, setTransactions, user }) => {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -18,6 +20,8 @@ const Transactions = ({ transactions, setTransactions }) => {
   const [showFilter, setShowFilter] = useState(false);
   const [sortOption, setSortOption] = useState("");
   const [isClosing, setIsClosing] = useState(false);
+
+  const symbol = getCurrencySymbol(user?.currency);
 
   const defaultFilters = {
   category: "",
@@ -248,64 +252,85 @@ const closeFilter = () => {
 
   return (
     <div>
-      {/* Header */}
-      <div className="transaction-header">
-        <h2>All Transactions</h2>
-        <div className="header-actions">
-        <div className="search-box">
-          <i className="fa-sharp fa-solid fa-magnifying-glass"></i>
-          <input
-            type="text"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+{/* 🔥 HEADER */}
+<div className="transaction-header">
+          <h2>All Transactions</h2>
         </div>
 
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setEditingData(null);
-              setShowModal(true);
-            }}
-          >
-            <i className="fa-sharp fa-solid fa-plus"></i>
-          </button>
 
-          <button
-            className="btn-edit"
-            disabled={selectedIds.length !== 1}
-            onClick={handleEditSelected}
-          >
-            <SquarePen/>
-          </button>
+<div className="transaction-toolbar">
 
-          <button
-            className="btn-delete"
-            disabled={selectedIds.length === 0}
-            onClick={() => setShowConfirm(true)}
-          >
-            <Trash/>
-          </button>
-        </div>
-      </div>
-
-      <div className="table-header">
-  <h2>Transactions</h2>
-  <div className="group-btn-export">
-  <button className="btn-export" onClick={exportToExcel}>Export Excel</button>
-  <button className="btn-export" onClick={exportToPDF}>Export PDF</button>
+  {/* CENTER SEARCH */}
+  <div className="toolbar-search">
+    <i className="fa-sharp fa-solid fa-magnifying-glass"></i>
+    <input
+      type="text"
+      placeholder="Search transactions..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
   </div>
- <button className="filter-btn" onClick={() => setShowFilter(true)}>
-  Filter {activeFilterCount > 0 && <span className="filter-count">{activeFilterCount}</span>}
-</button>
+
+  {/* RIGHT ACTIONS */}
+  <div className="toolbar-actions">
+
+    <button
+      className="icon-btn primary"
+      onClick={() => {
+        setEditingData(null);
+        setShowModal(true);
+      }}
+      title="Add"
+    >
+      <i className="fa-sharp fa-solid fa-plus"></i>
+    </button>
+
+    <button
+      className="icon-btn edit"
+      disabled={selectedIds.length !== 1}
+      onClick={handleEditSelected}
+      title="Edit"
+    >
+      <i className="fa-sharp fa-solid fa-pen-to-square"></i>
+    </button>
+
+    <button
+      className="icon-btn delete"
+      disabled={selectedIds.length === 0}
+      onClick={() => setShowConfirm(true)}
+      title="Delete"
+    >
+      <i className="fa-solid fa-trash"></i>
+    </button>
+
+    <button className="chip-btn" onClick={exportToExcel}>
+      <i className="fa-solid fa-download"></i> Excel
+    </button>
+
+    <button className="chip-btn" onClick={exportToPDF}>
+      <i className="fa-solid fa-download"></i> PDF
+    </button>
+
+    <button
+      className="icon-btn filter"
+      onClick={() => setShowFilter(true)}
+      title="Filter"
+    >
+      <i className="fa-solid fa-filter"></i>
+      {activeFilterCount > 0 && (
+        <span className="filter-badge">{activeFilterCount}</span>
+      )}
+    </button>
+
+  </div>
 </div>
 
       {/* Table */}
+      <div className="table-container">
       <table className="transaction-table">
         <thead>
             <tr>
-              <th>
+              <th style={{ width: "20px", padding: "0px", fontSize: "12px" }}>
                 <input
                   type="checkbox"
 
@@ -361,13 +386,13 @@ const closeFilter = () => {
         <td>{t.text}</td>
         <td>{t.category}</td>
         <td style={{ color: t.amount > 0 ? "#22c55e" : "#ef4444" }}>
-          ₹{t.amount}
+          {symbol}{t.amount}
         </td>
         <td>
           {t.date ? new Date(t.date).toLocaleDateString() : "-"}
         </td>
         <td>
-          <span className={`mode-badge ${t.mode}`}>
+          <span className={`mode-badge ${t.mode}`} style={{ fontSize: "10px",padding: "2px 6px"}}>
             {t.mode || "-"}
           </span>
         </td>
@@ -377,6 +402,7 @@ const closeFilter = () => {
   )}
 </tbody>
 </table>
+</div>
 
 {showFilter && (
   <div className={`filter-overlay ${isClosing ? "closing" : ""}`}>
@@ -390,36 +416,32 @@ const closeFilter = () => {
         <div className="filter-group">
         <label>Category</label>
         <select
-          value={filters.category}
-          onChange={(e) =>
-            setFilters({ ...filters, category: e.target.value })
-          }
-        >
-          <option value="">All</option>
-          <option value="Bills">Bills</option>
-          <option value="Food">Food</option>
-          <option value="Shopping">Shopping</option>
-          <option value="Transport">Transport</option>
-          <option value="Others">Others</option>
-          <option value="General">General</option>
-        </select>
+  value={filters.category}
+  onChange={(e) =>
+    setFilters({ ...filters, category: e.target.value })
+  }
+>
+  <option value="">All</option>
+  {CATEGORIES.map(cat => (
+    <option key={cat} value={cat}>{cat}</option>
+  ))}
+</select>
         </div>
 
         <div className="filter-group">
 
         <label>Payment Mode</label>
         <select
-          value={filters.mode}
-          onChange={(e) =>
-            setFilters({ ...filters, mode: e.target.value })
-          }
-        >
-          <option value="">All</option>
-          <option value="cash">Cash</option>
-          <option value="debit">Debit</option>
-          <option value="credit">Credit</option>
-          <option value="swish">Swish</option>
-        </select>
+  value={filters.category}
+  onChange={(e) =>
+    setFilters({ ...filters, category: e.target.value })
+  }
+>
+  <option value="">All</option>
+  {CATEGORIES.map(cat => (
+    <option key={cat} value={cat}>{cat}</option>
+  ))}
+</select>
         </div>
 
           <div className="filter-row">

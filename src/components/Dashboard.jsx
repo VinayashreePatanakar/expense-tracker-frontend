@@ -20,6 +20,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
 import * as htmlToImage from "html-to-image";
+import { getCurrencySymbol } from "../utils/currency";
 
 const Dashboard = ({ transactions, user, darkMode }) => {
 
@@ -30,6 +31,8 @@ const Dashboard = ({ transactions, user, darkMode }) => {
   subtext: darkMode ? "#94A3B8" : "#6B7280",
   border: darkMode ? "#334155" : "#E5E7EB",
 };
+
+const symbol = getCurrencySymbol(user?.currency);
 
   //Add Toggle (Monthly / Weekly + Stacked)
   const [viewMode, setViewMode] = useState("monthly");
@@ -76,6 +79,17 @@ const [fromDate, setFromDate] = useState(firstDay);
 const [toDate, setToDate] = useState(today);
 
 const [showPicker, setShowPicker] = useState(false);
+
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+useEffect(() => {
+  const handleResize = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
+
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
 
 const [range, setRange] = useState([
   {
@@ -135,7 +149,9 @@ const balanceChartData = useMemo(() => {
   });
 }, [filteredTransactions]);
 
-console.table(balanceChartData);
+useEffect(() => {
+  console.table(balanceChartData);
+}, [balanceChartData]);
 
 // Category-wise Pie Chart Data and summary chart data (for selected date range)
 const categoryChartData = useMemo(() => {
@@ -232,7 +248,7 @@ const chartData = useMemo(() => {
   return Object.values(map);
 }, [transactions, fromDate, toDate, viewMode]);
 
-console.log("Monthly Chart Data:", chartData);
+console.table(chartData);
 
 console.log("Transactions:", transactions);
 
@@ -247,7 +263,7 @@ const renderAnimatedLabel = (props) => {
       fill={theme.text}
       style={{ fontSize: 12, fontWeight: 600 }}
     >
-      ₹{value}
+      {symbol}{value}
     </text>
   );
 };
@@ -265,9 +281,9 @@ const paginatedTransactions = sortedTransactions.slice(
   endIndex
 );
 
-  console.log(transactions.map(t => t.date));
+  //console.log(transactions.map(t => t.date));
 
-const exportChart = () => {
+const exportChart = async () => {
   const node = document.getElementById("chart-export");
 
   if (!node) {
@@ -275,22 +291,35 @@ const exportChart = () => {
     return;
   }
 
-  htmlToImage.toPng(node).then((dataUrl) => {
+  try {
+    const dataUrl = await htmlToImage.toPng(node, {
+      cacheBust: true,
+      skipFonts: true,
+      backgroundColor: darkMode ? "#0F172A" : "#ffffff",
+      pixelRatio: 2,
+    });
+
     const link = document.createElement("a");
-    link.download = "chart.png";
+    link.download = "expense-chart.png";
     link.href = dataUrl;
     link.click();
-  });
+  } catch (error) {
+    console.error("Export failed:", error);
+  }
 };
 
   return (
     //Add this main wrapper around everything
     <div className={`dashboard-container ${darkMode ? "dark" : ""}`}>
+<div className="dashboard-header">
+        <h2>Dashboard</h2>
+      </div>
+
       {/* ================= SUMMARY  CARDS ================= */}
     <div className="summary-grid">
-        <div className="summary-card income"><h4>Income</h4><p>₹{income}</p></div>
-        <div className="summary-card expense"><h4>Expense</h4><p>₹{expense}</p></div>
-        <div className="summary-card balance"><h4>Balance</h4><p>₹{totalBalance}</p></div>
+        <div className="summary-card income"><h4>Income</h4><p>{symbol}{income}</p></div>
+        <div className="summary-card expense"><h4>Expense</h4><p>{symbol}{expense}</p></div>
+        <div className="summary-card balance"><h4>Balance</h4><p>{symbol}{totalBalance}</p></div>
         <div className="summary-card transactions"><h4>Transactions</h4><p>{transactionCount}</p></div>
       </div>
 
@@ -314,23 +343,23 @@ const exportChart = () => {
     </div>
 
     {/* Buttons */}
-    <button onClick={() => setViewMode("monthly")} className="btn-primary">
+    <button onClick={() => setViewMode("monthly")} className="btn-primary-dashboard">
       Monthly
     </button>
 
-    <button onClick={() => setViewMode("weekly")} className="btn-primary">
+    <button onClick={() => setViewMode("weekly")} className="btn-primary-dashboard">
       Weekly
     </button>
 
-    <button onClick={() => setStacked(!stacked)} className="btn-primary">
+    <button onClick={() => setStacked(!stacked)} className="btn-primary-dashboard">
       {stacked ? "Grouped" : "Stacked"}
     </button>
 
   </div>
 
   {/* RIGHT SIDE */}
-  <button className="btn-primary export-chart" onClick={exportChart}>
-    Export Chart
+  <button className="btn-primary-dashboard export-button" onClick={exportChart}>
+     <i className="fa-solid fa-download"></i> Export Chart
   </button>
 
   {/* DATE PICKER POPUP */}
@@ -341,8 +370,8 @@ const exportChart = () => {
         onChange={(item) => setRange([item.selection])}
         moveRangeOnFirstSelection={false}
         ranges={range}
-        months={2}
-        direction="horizontal"
+        months={window.innerWidth < 768 ? 1 : 2}
+        direction={window.innerWidth < 768 ? "vertical" : "horizontal"}
         maxDate={new Date()}
       />
 
@@ -378,7 +407,7 @@ const exportChart = () => {
   {chartData.length === 0 ? (
     <p className="empty-state">No data available</p>
   ) : (
-  <ResponsiveContainer width="100%" height={250}>
+  <ResponsiveContainer width="100%" height={window.innerWidth < 768 ? 200 : 300}>
   <BarChart data={chartData} barGap={8} barCategoryGap="20%">
     <defs>
       <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -416,7 +445,7 @@ const exportChart = () => {
         boxShadow: "0 10px 20px rgba(0,0,0,0.08)",
       }}
       formatter={(value, name) => [
-        `₹${value}`,
+        `${symbol}${value}`,
         name === "income" ? "Income" : "Expense",
       ]}
     />
@@ -452,7 +481,7 @@ const exportChart = () => {
     {balanceChartData.length === 0 ? (
       <p style={{ textAlign: "center", marginTop: "100px" }}>No data available</p>
     ) : (
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={window.innerWidth < 768 ? 200 : 300}>
         <LineChart data={balanceChartData}>
   <XAxis
   dataKey="timestamp"
@@ -469,7 +498,7 @@ const exportChart = () => {
     }
     formatter={(value, name) => {
       if (name === "Balance") {
-        return [`₹${value}`, "Balance"];
+        return [`${symbol}${value}`, "Balance"];
       }
       return value;
     }}
@@ -490,14 +519,14 @@ const exportChart = () => {
   {new Date(label).toLocaleDateString("en-GB")}
 </p>
             <p>
-              <strong>Balance:</strong> ₹{data.balance}
+              <strong>Balance:</strong> {symbol}{data.balance}
             </p>
             <p
               style={{
                 color: data.change > 0 ? "green" : "red",
               }}
             >
-              <strong>Change:</strong> ₹{data.change}
+              <strong>Change:</strong> {symbol}{data.change}
             </p>
           </div>
         );
@@ -539,18 +568,20 @@ const exportChart = () => {
     <div className="pie-responsive-wrapper">
       {/* -------- Donut Chart -------- */}
       <ResponsiveContainer width="100%" height={348}>
-        <PieChart>
+        <PieChart className="pie-chart">
           <Pie
             data={categoryChartData}
             dataKey="amount"
             nameKey="category"
             cx="55%"
             cy="45%"
-            innerRadius={80}
-            outerRadius={120}
+            innerRadius={isMobile ? 60 : 80}
+            outerRadius={isMobile ? 90 : 120}
             paddingAngle={6}
             labelLine={false}
             label={(props) => {
+                      if (isMobile) return null; // ✅ hide labels on mobile
+
                         const { cx, cy, midAngle, outerRadius, percent, index } = props;
 
                         // Hide very small slices (less than 5%)
@@ -603,12 +634,12 @@ const exportChart = () => {
      fill: "var(--text-primary)",  // ✅ THIS LINE
   }}
 >
-  ₹{expense}
+  {symbol}{expense}
 </text>
                     <Tooltip
                       formatter={(value, name, props) => {
                         const c = props.payload;
-                        return [`₹${c.amount.toFixed(0)} (${c.percent}%)`, c.category];
+                        return [`${symbol}${c.amount.toFixed(0)} (${c.percent}%)`, c.category];
                       }}
                     />
                   </PieChart>
@@ -620,7 +651,7 @@ const exportChart = () => {
                     <div key={index} className="legend-item-below">
                       <span className="color-box-below" style={{ background: COLORS[index % COLORS.length] }} />
                       <span className="legend-name-below">{item.category}</span>
-                      <span className="legend-value-below">₹{item.amount.toFixed(0)} ({item.percent}%)</span>
+                      <span className="legend-value-below">{symbol}{item.amount.toFixed(0)} ({item.percent}%)</span>
                     </div>
                   ))}
                 </div>
@@ -637,6 +668,7 @@ const exportChart = () => {
         {paginatedTransactions.length === 0 ? (
           <p>No transactions found</p>
         ) : (
+          <div className="table-container">
           <table className="recent-transactions">
   <thead>
     <tr>
@@ -654,13 +686,14 @@ const exportChart = () => {
         <td>{formatDate(t.date)}</td>
         <td>{t.category}</td>
         <td>{t.text}</td>
-        <td className={t.amount > 0 ? "income" : "expense"}>₹{t.amount}</td>
+        <td className={t.amount > 0 ? "income" : "expense"}>{symbol}{t.amount}</td>
         <td>{t.mode}</td>
         <td>{t.description}</td>
       </tr>
     ))}
   </tbody>
 </table>
+    </div>
         )}
       </div>
     </div>

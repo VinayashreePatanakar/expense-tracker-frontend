@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { addTransaction, updateTransaction } from "../services/api";
+import { CATEGORIES } from "../constants/categories";
 
-const categories = ["General", "Rent/Mortgage", "Food", "Utilities", "Entertainment", "Transportation", "Insurance", "Health care", "Shopping", "Clothing", "Bills", "Vacation", "Others"];
+/*const categories = ["General", "Rent/Mortgage", "Food", "Utilities", "Entertainment", "Transportation", "Insurance", "Health care", "Shopping", "Clothing", "Bills", "Vacation", "Others"];*/
 
 const TransactionModal = ({ close, setTransactions, editingData }) => {
 const [form, setForm] = useState({
@@ -62,7 +63,7 @@ const payload = {
 
     if (editingData) {
       const res = await updateTransaction(editingData._id, payload);
-      console.log("Updated Response:", res.data);
+      //console.log("Updated Response:", res.data);
       setTransactions((prev) =>
         prev.map((t) =>
           t._id === editingData._id ? res.data : t
@@ -145,7 +146,7 @@ const payload = {
             setForm({ ...form, category: e.target.value })
           }
         >
-          {categories.map((c) => (
+          {CATEGORIES.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>

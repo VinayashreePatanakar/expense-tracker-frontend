@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { getBudget, saveBudget } from "../services/api";
+import { CATEGORIES } from "../constants/categories";
+import { getCurrencySymbol } from "../utils/currency";
 
-const Reports = ({ transactions = [] }) => {
+const Reports = ({ transactions = [], user }) => {
   const [budgets, setBudgets] = useState({});
   const [editMode, setEditMode] = useState(false);
 
@@ -10,6 +12,8 @@ const Reports = ({ transactions = [] }) => {
   const [sortOrder, setSortOrder] = useState("desc"); // asc | desc
 
   const [editingRows, setEditingRows] = useState({});
+  
+  const symbol = getCurrencySymbol(user?.currency);
 
 const toggleEditRow = (cat) => {
   setEditingRows((prev) => ({
@@ -40,13 +44,11 @@ const saveSingleRow = async (cat) => {
 };
 
   // ✅ Dynamic categories from transactions
-  const categories = useMemo(() => {
-    const unique = new Set();
-    transactions.forEach((t) => {
-      if (t.category) unique.add(t.category);
-    });
-    return Array.from(unique);
-  }, [transactions]);
+ const categories = useMemo(() => {
+  const txnCategories = transactions.map(t => t.category);
+
+  return Array.from(new Set([...CATEGORIES, ...txnCategories]));
+}, [transactions]);
 
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
@@ -59,7 +61,7 @@ const saveSingleRow = async (cat) => {
 }, [budgets]);
 
   // ✅ FIXED DATE + SPENT CALCULATION
-  const spent = useMemo(() => {
+  const spent = useMemo(() => { 
     const totals = {};
 
     transactions.forEach((t) => {
@@ -166,6 +168,16 @@ const saveBudgets = async () => {
   }
 };
 
+useEffect(() => {
+  const updated = {};
+
+  categories.forEach(cat => {
+    updated[cat] = budgets[cat] || 0;
+  });
+
+  setBudgets(updated);
+}, [categories]);
+
   // ✅ SUMMARY
   const totalSpent = Object.values(spent).reduce((a, b) => a + b, 0);
   const remainingTotal = totalBudget - totalSpent;
@@ -179,7 +191,7 @@ const saveBudgets = async () => {
     const percent = (used / limit) * 100;
 
     if (percent > 100) {
-      messages.push(`🚨 ${cat}: Overspent by ₹${(used - limit).toFixed(0)}`);
+      messages.push(`🚨 ${cat}: Overspent by ${(used - limit).toFixed(0)}`);
     } else if (percent > 80) {
       messages.push(`⚠️ ${cat}: ${percent.toFixed(0)}% used`);
     }
@@ -199,17 +211,17 @@ const saveBudgets = async () => {
       <div className="budget-summary">
         <div className="budget-box total">
           <h4>Total Budget</h4>
-          <p>₹{totalBudget}</p>
+          <p>{symbol}{totalBudget}</p>
         </div>
 
         <div className="budget-box spent">
           <h4>Spent</h4>
-          <p>₹{totalSpent}</p>
+          <p>{symbol}{totalSpent}</p>
         </div>
 
         <div className="budget-box remaining">
           <h4>Remaining</h4>
-          <p>₹{remainingTotal}</p>
+          <p>{symbol}{remainingTotal}</p>
         </div>
       </div>
 
@@ -235,7 +247,7 @@ const saveBudgets = async () => {
           checked={useSameBudget}
           onChange={() => setUseSameBudget(!useSameBudget)}
         />
-        <span style={{ marginTop: "20px" }}>Same budget</span>
+        <span style={{ marginTop: "20px", marginLeft: "-10px"}}>Same budget</span>
       </label>
     </div>
 
@@ -252,7 +264,7 @@ const saveBudgets = async () => {
         />
       </div>
 
-      <select
+      <select className="form-control"
         value={sortBy}
         onChange={(e) => setSortBy(e.target.value)}
       >
@@ -283,6 +295,7 @@ const saveBudgets = async () => {
 )}
 
   {/* 📊 TABLE */}
+  <div className="table-container">
   <table className="budget-table">
     <thead>
       <tr>
@@ -319,13 +332,13 @@ const saveBudgets = async () => {
       }
     />
   ) : (
-    `₹ ${limit.toFixed(2)}`
+    `${symbol} ${limit.toFixed(2)}`
   )}
 </td>
 
-  <td>₹ {used.toFixed(2)}</td>
+  <td>{symbol} {used.toFixed(2)}</td>
   <td>
-  ₹ {remaining.toFixed(2)}
+  {symbol} {remaining.toFixed(2)}
 
   {percent > 100 && (
     <div className="inline-alert danger">
@@ -376,6 +389,7 @@ const saveBudgets = async () => {
       })}
     </tbody>
   </table>
+  </div>
 </div>
     </div>
   );
