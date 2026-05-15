@@ -83,15 +83,15 @@ const MainLayout = ({ user: initialUser }) => {
 <div
   className={`sidebar  ${collapsed ? "collapsed" : ""}  ${isMobileOpen ? "open" : ""}`}
   style={{
-    background: darkMode ? "rgba(15, 23, 42, 10)" : "var(--sidebar-bg)",
+    background: darkMode ? "rgba(15, 23, 42, 0.98)" : "var(--sidebar-bg)",
     color: darkMode ? "#fff" : "var(--nav-text)",
     padding: "20px",
-    marginTop: "40px",
+    marginTop: "0",
   }}
 >
 
   {/* 🔥 COLLAPSE BUTTON (TOP RIGHT) */}
-  <div className="sidebar-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+  <div className="sidebar-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", marginTop: "0", marginBottom: "20px" }}>
     <h2
       className="sidebar-title"
       onClick={() => {
@@ -100,7 +100,7 @@ const MainLayout = ({ user: initialUser }) => {
       }}
       style={{ margin: 0 }}
     >
-      {collapsed && !isMobileOpen ? "ET" : "Expense Tracker"}
+      {collapsed && !isMobileOpen ? "SS" : "SpendSync"}
     </h2>
 
     {isMobileOpen && isMobile ? (
@@ -124,13 +124,13 @@ const MainLayout = ({ user: initialUser }) => {
       >
         <i
           className={`fa-solid ${collapsed ? "fa-bars" : "fa-xmark"}`}
-          style={{ marginRight: "5px" }}
+          style={{ marginRight: "6px" }}
         ></i>
       </button>
     )}
   </div>
 
-<div className="nav-container"> 
+<div className="nav-container">   
 
 <div
   className={`nav ${activePage === "dashboard" ? "active" : ""}`}
@@ -192,14 +192,14 @@ const MainLayout = ({ user: initialUser }) => {
           <div
             className="navbar-top"
             style={{
-              height: "50px",
+              height: "80px",
               backdropFilter: "blur(12px)",
               background: darkMode
                 ? "rgba(15,23,42,0.7)"
-                : "rgba(255, 255, 255, 10)",
+                : "rgba(255, 255, 255, 0.12)",
               borderBottom: darkMode
-                ? "1px solid #334155"
-                : "1px solid #e5e7eb",
+                ? "1px solid rgba(255, 255, 255, 0.12)"
+                : "1px solid rgba(0, 0, 0, 0.08)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -211,7 +211,7 @@ const MainLayout = ({ user: initialUser }) => {
             <button
   className="icon-btn"
   onClick={() => setIsMobileOpen(true)}
-  style={{ marginRight: "-90px" }}
+  style={{ marginRight: "-40px" }}
 >
   <i className="fa-solid fa-bars"></i>
 </button>
@@ -235,7 +235,10 @@ const MainLayout = ({ user: initialUser }) => {
 </div>
 
   <div className="tooltip-wrapper"
-  onClick={() => setActivePage("profile")}
+  onClick={() => {
+    setActivePage("profile");
+    setIsMobileOpen(false);
+  }}
   style={{ cursor: "pointer" }}
   >
   <div className="avatar">
@@ -252,7 +255,7 @@ const MainLayout = ({ user: initialUser }) => {
 </div>
 
   {/* Logout */}
-<div className="tooltip-wrapper">
+<div className="tooltip-wrapper logout">
   <button
     className="icon-btn"
     onClick={() => {

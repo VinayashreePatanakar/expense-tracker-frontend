@@ -687,7 +687,9 @@ const exportChart = async () => {
         <td>{t.category}</td>
         <td>{t.text}</td>
         <td className={t.amount > 0 ? "income" : "expense"}>{symbol}{t.amount}</td>
-        <td>{t.mode}</td>
+        <td><span className={`mode-badge ${t.mode}`} style={{ fontSize: "10px",padding: "2px 6px"}}>
+            {t.mode || "-"}
+          </span></td>
         <td>{t.description}</td>
       </tr>
     ))}

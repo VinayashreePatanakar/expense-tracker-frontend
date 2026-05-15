@@ -12,6 +12,7 @@ const Reports = ({ transactions = [], user }) => {
   const [sortOrder, setSortOrder] = useState("desc"); // asc | desc
 
   const [editingRows, setEditingRows] = useState({});
+  const [editingValues, setEditingValues] = useState({});
   
   const symbol = getCurrencySymbol(user?.currency);
 
@@ -20,17 +21,39 @@ const toggleEditRow = (cat) => {
     ...prev,
     [cat]: true, // ✅ force edit mode ON
   }));
+  setEditingValues((prev) => ({
+    ...prev,
+    [cat]: budgets[cat] != null ? budgets[cat].toString() : "",
+  }));
 };
 
 const saveSingleRow = async (cat) => {
   try {
+    const value = editingValues[cat];
+    const numericValue = parseFloat(value);
+    const updatedBudget = Number.isFinite(numericValue) ? numericValue : 0;
+
     const payload = {
       month: useSameBudget ? "default" : selectedMonth,
-      totalBudget,
-      categories: budgets,
+      totalBudget: Object.values({
+        ...budgets,
+        [cat]: updatedBudget,
+      }).reduce((sum, val) => sum + val, 0),
+      categories: {
+        ...budgets,
+        [cat]: updatedBudget,
+      },
     };
 
     await saveBudget(payload);
+    setBudgets((prev) => ({
+      ...prev,
+      [cat]: updatedBudget,
+    }));
+    setEditingValues((prev) => ({
+      ...prev,
+      [cat]: updatedBudget.toString(),
+    }));
 
     // ✅ disable edit after save
     setEditingRows((prev) => ({
@@ -146,7 +169,10 @@ useEffect(() => {
 }, [fetchBudget]);
 
   const handleBudgetChange = (category, value) => {
-    setBudgets({ ...budgets, [category]: parseFloat(value) || 0 });
+    setEditingValues((prev) => ({
+      ...prev,
+      [category]: value,
+    }));
   };
 
   // ✅ SAVE
@@ -169,13 +195,20 @@ const saveBudgets = async () => {
 };
 
 useEffect(() => {
-  const updated = {};
+  const updatedBudgets = {};
+  const updatedValues = {};
 
   categories.forEach(cat => {
-    updated[cat] = budgets[cat] || 0;
+    const value = budgets[cat] || 0;
+    updatedBudgets[cat] = value;
+    updatedValues[cat] = value.toString();
   });
 
-  setBudgets(updated);
+  setBudgets(updatedBudgets);
+  setEditingValues((prev) => ({
+    ...updatedValues,
+    ...prev,
+  }));
 }, [categories]);
 
   // ✅ SUMMARY
@@ -322,11 +355,11 @@ useEffect(() => {
   <td>{cat}</td>
 
   {/* BUDGET INPUT */}
-<td>
+<td className="total">
   {editingRows[cat] ? (
     <input
       type="number"
-      value={limit}
+      value={editingValues[cat] ?? limit.toString()}
       onChange={(e) =>
         handleBudgetChange(cat, e.target.value)
       }
@@ -336,9 +369,11 @@ useEffect(() => {
   )}
 </td>
 
-  <td>{symbol} {used.toFixed(2)}</td>
-  <td>
-  {symbol} {remaining.toFixed(2)}
+  <td className="spent">
+    {symbol} {used.toFixed(2)}
+  </td>
+  <td className="remaining">
+    {symbol} {remaining.toFixed(2)}
 
   {percent > 100 && (
     <div className="inline-alert danger">
