@@ -112,6 +112,7 @@ const Register = ({ setUser, switchToLogin }) => {
 
         {/* RIGHT SIDE: AUTHENTICATION FORM */}
         <div className="auth-form-side">
+          <div className="mobile-brand-name">SpendSync</div>
           <div className="auth-form-header">
             <h2>Create Account</h2>
             <p className="switch-text">
@@ -120,7 +121,7 @@ const Register = ({ setUser, switchToLogin }) => {
           </div>
 
           <form onSubmit={handleRegister} className="auth-fields-stack">
-            <div className="input-group">
+            <div className="input-group input-group-login-register">
               <input 
                 type="text" 
                 value={name} 
@@ -138,7 +139,7 @@ const Register = ({ setUser, switchToLogin }) => {
               )}
             </div>
 
-            <div className="input-group">
+            <div className="input-group input-group-login-register">
               <input 
                 type="email" 
                 value={email} 
@@ -155,7 +156,7 @@ const Register = ({ setUser, switchToLogin }) => {
               )}
             </div>
 
-            <div className="input-group password-group">
+            <div className="input-group password-group input-group-login-register">
               <div className="password-wrapper">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -193,7 +194,7 @@ const Register = ({ setUser, switchToLogin }) => {
               )}
             </div>
 
-            <button className="auth-btn" type="submit" disabled={loading || Object.keys(errors).length > 0}>
+            <button className="auth-btn register-btn" type="submit" disabled={loading || Object.keys(errors).length > 0}>
               {loading ? "Creating account..." : "Register"}
             </button>
           </form>

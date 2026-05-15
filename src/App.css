@@ -810,7 +810,7 @@ button, input, select {
 }
 
 .auth-form-header {
-  margin-bottom: 32px;
+  margin-bottom: 10px;
 }
 
 .auth-form-header h2 {
@@ -2817,7 +2817,7 @@ z-index: 9999;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
-  margin-top: 5px;
+  margin-top: 20px;
   }
 
   .auth-btn:hover {
@@ -2871,6 +2871,10 @@ z-index: 9999;
 }
 
 /* FORM FIELDS STACK */
+.mobile-brand-name {
+  display: none;
+}
+
 .auth-fields-stack {
   display: flex;
   flex-direction: column;
@@ -3356,6 +3360,7 @@ z-index: 9999;
   .social-auth-row {
     flex-direction: column; /* Stack Google/Apple buttons */
     gap: 10px;
+    margin-top: -20px;
   }
 
   .social-auth-row button {
@@ -3368,6 +3373,19 @@ z-index: 9999;
 ========================= */
 
 @media (max-width: 480px) {
+  .mobile-brand-name {
+    display: block;
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 50px;
+    color: var(--text-main);
+  }
+
+  .register-btn{
+    margin-top: 10px;
+  }
+
   .sidebar.open {
     width: 100%;
   }
@@ -3787,7 +3805,10 @@ border-radius: 10px;
 
   .input-group{
      margin-top: 20px;
-     margin-bottom: 20px;
+  }
+
+  .input-group-login-register{
+     margin-bottom: -30px;
   }
 
   .password-wrapper input{
@@ -3861,5 +3882,9 @@ border-radius: 10px;
   /* Strength bar adjustment */
   .strength-text {
     font-size: 11px;
+  }
+
+  .strength-bar {
+    margin-top: 45px;
   }
 }

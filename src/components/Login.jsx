@@ -118,6 +118,7 @@ const Login = ({ setUser, switchToRegister  }) => {
 
         {/* RIGHT SIDE: AUTHENTICATION FORM */}
         <div className="auth-form-side">
+          <div className="mobile-brand-name">SpendSync</div>
           <div className="auth-form-header">
             <h2>Welcome Back</h2>
             <p className="switch-text">
@@ -126,7 +127,7 @@ const Login = ({ setUser, switchToRegister  }) => {
           </div>
 
           <div className="auth-fields-stack">
-            <div className="input-group">
+            <div className="input-group input-group-login-register">
               <input
                 type="email"
                 required
@@ -137,7 +138,7 @@ const Login = ({ setUser, switchToRegister  }) => {
               />
             </div>
 
-            <div className="input-group password-group">
+            <div className="input-group password-group input-group-login-register">
               <div className="password-wrapper">
                 <input
                   type={showPassword ? "text" : "password"}
