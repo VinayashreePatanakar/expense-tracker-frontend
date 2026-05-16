@@ -1610,6 +1610,7 @@ z-index: 9999;
     display: flex;
     justify-content: space-between;
     margin-bottom: 20px;
+    margin-top: 0px;
   }
 
   .filter-body label {
@@ -1663,6 +1664,11 @@ z-index: 9999;
     border: none;
     padding: 8px 14px;
     border-radius: 8px;
+    width: 48%;
+  }
+
+  .reset-btn{
+    width: 48%;
   }
 
   .filter-actions button:first-child {
@@ -3386,6 +3392,10 @@ z-index: 9999;
     margin-top: 10px;
   }
 
+  .budget-summary .total{
+    font-size: 10px;
+  }
+
   .sidebar.open {
     width: 100%;
   }
@@ -3681,14 +3691,15 @@ border-radius: 10px;
   }
 
   .icon-btn{
-    margin-left: 12px;
-    height: 35px;
-    width: 35px;
+    margin-left: 1px;
+    height: 30px;
+    width: 30px;
   }
 
   .toolbar-actions button{
-    font-size: 14px;
+    font-size: 12px;
     padding: 6px 10px;
+    margin-left: 1px;
   }
 
   .transaction-table th{
@@ -3886,5 +3897,22 @@ border-radius: 10px;
 
   .strength-bar {
     margin-top: 45px;
+  }
+
+  .filter-body{
+    margin-top: -30px;
+  }
+
+  .filter-body label {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .filter-body input,
+  .filter-body select
+   {
+    font-size: 10px;
+    margin-top: -2px;
+    padding: 8px;
   }
 }

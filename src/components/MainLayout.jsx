@@ -98,9 +98,9 @@ const MainLayout = ({ user: initialUser }) => {
         setActivePage("dashboard");
         setIsMobileOpen(false);
       }}
-      style={{ margin: 0 }}
+      style={{ margin: "10px", cursor: "pointer", fontSize: "1.0rem", fontWeight: "bold", textAlign: "center", color: darkMode ? "#fff" : "var(--nav-text)" }}
     >
-      {collapsed && !isMobileOpen ? "SS" : "SpendSync"}
+      {collapsed && !isMobileOpen ? "ET" : "Expense Tracker"}
     </h2>
 
     {isMobileOpen && isMobile ? (

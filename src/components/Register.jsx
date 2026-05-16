@@ -97,7 +97,7 @@ const Register = ({ setUser, switchToLogin }) => {
             style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${FrontPage1})` }}
           >
           <div className="brand-logo">
-            <span>SpendSync</span>
+            <span>Expense Tracker</span>
           </div>
         {/*   <div className="auth-carousel-text">
             <h3>Plan Today,<br />Secure Tomorrow</h3>
@@ -112,7 +112,7 @@ const Register = ({ setUser, switchToLogin }) => {
 
         {/* RIGHT SIDE: AUTHENTICATION FORM */}
         <div className="auth-form-side">
-          <div className="mobile-brand-name">SpendSync</div>
+          <div className="mobile-brand-name">Expense Tracker</div>
           <div className="auth-form-header">
             <h2>Create Account</h2>
             <p className="switch-text">

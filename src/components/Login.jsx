@@ -103,7 +103,7 @@ const Login = ({ setUser, switchToRegister  }) => {
           >
           <div className="brand-logo">
             <UserRoundKey size={28} />
-            <span>SpendSync</span>
+            <span>Expense Tracker</span>
           </div>
          {/*  <div className="auth-carousel-text">
             <h3>Smart Spending,<br />Better Future</h3>
@@ -118,7 +118,7 @@ const Login = ({ setUser, switchToRegister  }) => {
 
         {/* RIGHT SIDE: AUTHENTICATION FORM */}
         <div className="auth-form-side">
-          <div className="mobile-brand-name">SpendSync</div>
+          <div className="mobile-brand-name">Expense Tracker</div>
           <div className="auth-form-header">
             <h2>Welcome Back</h2>
             <p className="switch-text">

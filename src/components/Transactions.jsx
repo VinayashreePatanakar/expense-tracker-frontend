@@ -275,7 +275,7 @@ const closeFilter = () => {
   <div className="toolbar-actions">
 
     <button
-      className="icon-btn primary"
+      className="icon-btn transaction-btn primary"
       onClick={() => {
         setEditingData(null);
         setShowModal(true);
@@ -507,6 +507,7 @@ const closeFilter = () => {
 
         <div className="filter-actions">
           <button
+            className="reset-btn"
             onClick={() => {
               setFilters(defaultFilters);
               setSortOption("");
