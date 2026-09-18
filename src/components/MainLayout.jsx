@@ -4,6 +4,7 @@ import Dashboard from "./Dashboard";
 import Transactions from "./Transactions";
 import Reports from "./Reports";
 import Profile from "./Profile";
+import Ai from "./AIInsights";
 import { getAllTransactions } from "../services/api";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -175,7 +176,18 @@ const MainLayout = ({ user: initialUser }) => {
   <i className="fa-solid fa-user"></i>
   {(!collapsed || isMobile) && <span style={{ opacity: 0.8 }}>Profile Settings</span>}
 </div>
-    </div>
+
+<div
+className={`nav logout ${activePage === "ai" ? "active" : ""}`}
+onClick={() => {
+  setActivePage("ai");
+  setIsMobileOpen(false); // 👈 close on mobile
+}}
+>
+  <i className="fa-solid fa-robot"></i>
+  {(!collapsed || isMobile) && <span style={{ opacity: 0.8 }}>AI Financial Insights</span>}
+  </div>
+  </div>
   </div>
 
     {isMobileOpen && (

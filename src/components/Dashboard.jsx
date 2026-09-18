@@ -24,6 +24,11 @@ import { getCurrencySymbol } from "../utils/currency";
 
 const Dashboard = ({ transactions, user, darkMode }) => {
 
+//AI Insight
+const [aiInsight, setAiInsight] = useState("");
+const [aiLoading, setAiLoading] = useState(false);
+const [aiError, setAiError] = useState("");
+
   const theme = {
   bg: darkMode ? "#0F172A" : "#F9FAFB",
   card: darkMode ? "#1E293B" : "#FFFFFF",
@@ -193,6 +198,139 @@ const categoryChartData = useMemo(() => {
   const totalBalance = income - expense;
   const transactionCount = filteredTransactions.length;
 
+//AI Insight
+// ================= AI INSIGHT =================
+const generateAIInsight = async () => {
+  try {
+    setAiLoading(true);
+    setAiError("");
+    setAiInsight("");
+
+    // ================= EXPENSE CATEGORIES =================
+    const categories = {};
+
+    filteredTransactions.forEach((t) => {
+      const amount = Number(t.amount);
+
+      // Only negative transactions are expenses
+      if (amount < 0) {
+        const category = t.category || "General";
+
+        categories[category] =
+          (categories[category] || 0) + Math.abs(amount);
+      }
+    });
+
+    // ================= CATEGORY PERCENTAGES =================
+    const categoryPercentages = {};
+
+    Object.entries(categories).forEach(([category, amount]) => {
+      categoryPercentages[category] =
+        expense > 0
+          ? Number(((amount / expense) * 100).toFixed(2))
+          : 0;
+    });
+
+    // ================= HIGHEST EXPENSE =================
+    const highestExpenseEntry = Object.entries(categories).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    const highestExpenseCategory = highestExpenseEntry
+      ? highestExpenseEntry[0]
+      : "None";
+
+    const highestExpenseAmount = highestExpenseEntry
+      ? highestExpenseEntry[1]
+      : 0;
+
+    // Percentage of total expenses for highest category
+    const highestExpensePercentage =
+      expense > 0
+        ? Number(
+            ((highestExpenseAmount / expense) * 100).toFixed(2)
+          )
+        : 0;
+
+    // ================= EXPENSE % OF INCOME =================
+    const expensePercentageOfIncome =
+      income > 0
+        ? Number(((expense / income) * 100).toFixed(2))
+        : 0;
+
+    // ================= FINANCIAL DATA =================
+    const financialData = {
+      currency: user?.currency || "SEK",
+
+      dateRange: {
+        from: fromDate,
+        to: toDate,
+      },
+
+      totalIncome: income,
+      totalExpenses: expense,
+      remainingBalance: totalBalance,
+      transactionCount,
+
+      categories,
+
+      categoryPercentages,
+
+      highestExpenseCategory,
+      highestExpenseAmount,
+      highestExpensePercentage,
+
+      expensePercentageOfIncome,
+
+      recentTransactions: filteredTransactions
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.date) - new Date(a.date)
+        )
+        .slice(0, 20)
+        .map((t) => ({
+          date: t.date,
+          category: t.category,
+          amount: Number(t.amount),
+          description: t.description,
+          paymentMode: t.mode,
+        })),
+    };
+
+    // ================= BACKEND =================
+    const API_URL = "http://localhost:5000/api";
+
+    const response = await fetch(
+      `${API_URL}/ai/insights`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(financialData),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message || "Failed to generate AI insight"
+      );
+    }
+
+    setAiInsight(data.insight);
+  } catch (error) {
+    console.error("AI Insight Error:", error);
+    setAiError(
+      "Unable to generate AI insight. Please try again."
+    );
+  } finally {
+    setAiLoading(false);
+  }
+};
+
   // ✅ Monthly chart data (group by month)
 const monthlyMap = {}; 
 transactions
@@ -311,17 +449,65 @@ const exportChart = async () => {
   return (
     //Add this main wrapper around everything
     <div className={`dashboard-container ${darkMode ? "dark" : ""}`}>
-<div className="dashboard-header">
+      <div className="dashboard-header">
         <h2>Dashboard</h2>
       </div>
 
       {/* ================= SUMMARY  CARDS ================= */}
-    <div className="summary-grid">
+      <div className="summary-grid">
         <div className="summary-card income"><h4>Income</h4><p>{symbol}{income}</p></div>
         <div className="summary-card expense"><h4>Expense</h4><p>{symbol}{expense}</p></div>
         <div className="summary-card balance"><h4>Balance</h4><p>{symbol}{totalBalance}</p></div>
         <div className="summary-card transactions"><h4>Transactions</h4><p>{transactionCount}</p></div>
       </div>
+
+      {/* ================= AI Insight ================= */}
+      <div className="ai-insight-card">
+  <div className="ai-insight-header">
+    <div>
+      <h3>
+        <i className="fa-solid fa-robot"></i>
+        AI Financial Insight
+      </h3>
+
+      <p>
+        Get an AI-powered analysis of your current spending.
+      </p>
+    </div>
+
+    <button
+      className="btn-primary-dashboard"
+      onClick={generateAIInsight}
+      disabled={aiLoading || filteredTransactions.length === 0}
+    >
+      {aiLoading ? (
+        <>
+          <i className="fa-solid fa-spinner fa-spin"></i>
+          Analyzing...
+        </>
+      ) : (
+        <>
+          <i className="fa-solid fa-wand-magic-sparkles"></i>
+          Generate Insight
+        </>
+      )}
+    </button>
+  </div>
+
+  {aiError && (
+    <p className="ai-error">
+      {aiError}
+    </p>
+  )}
+
+  {aiInsight && (
+    <div className="ai-insight-result">
+      <i className="fa-solid fa-lightbulb"></i>
+
+      <p>{aiInsight}</p>
+    </div>
+  )}
+</div>
 
       {/* ================= DATE FILTER ================= */}
  <div className="date-filter-wrapper" style={{
