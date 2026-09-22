@@ -502,6 +502,8 @@ const exportChart = async () => {
 
   {aiInsight && (
     <div className="ai-insight-result">
+
+    <h4 className="ai-section-title">
       <i className="fa-solid fa-lightbulb"></i>
 
       <p>{aiInsight}</p>
