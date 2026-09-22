@@ -12,19 +12,6 @@ export const API = axios.create({
 
 console.log("API URL:", BASE_URL);
 
-// 🔥 Automatically attach token to every request
-API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-
-   console.log("TOKEN:", token); // 👈 ADD THIS
-
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return req;
-});
-
 // ===== BUDGET APIs =====
 export const getBudget = (month) =>
   API.get(`/budgets?month=${month}`);

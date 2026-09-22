@@ -40,7 +40,6 @@ const Login = ({ setUser, switchToRegister  }) => {
         email,
         password,
       });
-      console.log({ email, password });
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
