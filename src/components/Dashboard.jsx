@@ -21,6 +21,7 @@ import "react-date-range/dist/theme/default.css";
 import { format } from "date-fns";
 import * as htmlToImage from "html-to-image";
 import { getCurrencySymbol } from "../utils/currency";
+import { API } from "../services/api";
 
 const Dashboard = ({ transactions, user, darkMode }) => {
 
@@ -299,22 +300,10 @@ const generateAIInsight = async () => {
     };
 
     // ================= BACKEND =================
-    const API_URL = "http://localhost:5000/api";
+    const response = await API.post("/ai/insights", financialData);
+    const data = response.data;
 
-    const response = await fetch(
-      `${API_URL}/ai/insights`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(financialData),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       throw new Error(
         data.message || "Failed to generate AI insight"
       );
