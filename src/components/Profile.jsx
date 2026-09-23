@@ -28,8 +28,8 @@ const [passwordData, setPasswordData] = useState({
 
 const getStrengthClass = (password) => {
   if (!password) return "";
-  if (password.length < 6) return "weak";
-  if (password.match(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/))
+  if (password.length < 8) return "weak";
+  if (password.match(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/))
     return "strong";
   return "medium";
 };
@@ -37,7 +37,7 @@ const getStrengthClass = (password) => {
 
 const isPasswordValid =
   passwordData.currentPassword &&
-  passwordData.newPassword.length >= 6 &&
+  passwordData.newPassword.length >= 8 &&
   passwordData.newPassword === passwordData.confirmPassword;
 
   const handleKeyEvent = (e) => {
@@ -87,8 +87,8 @@ const handleChangePassword = async () => {
   return toast.error("Please fill all fields");
 }
 
-if (passwordData.newPassword.length < 6) {
-  return toast.error("Password must be at least 6 characters");
+if (passwordData.newPassword.length < 8) {
+  return toast.error("Password must be at least 8 characters");
 }
 
 if (passwordData.newPassword !== passwordData.confirmPassword) {
