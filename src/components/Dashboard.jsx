@@ -30,19 +30,24 @@ const [aiInsight, setAiInsight] = useState("");
 const [aiLoading, setAiLoading] = useState(false);
 const [aiError, setAiError] = useState("");
 
-  const theme = {
-  bg: darkMode ? "#0F172A" : "#F9FAFB",
-  card: darkMode ? "#1E293B" : "#FFFFFF",
-  text: darkMode ? "#F1F5F9" : "#111827",
-  subtext: darkMode ? "#94A3B8" : "#6B7280",
-  border: darkMode ? "#334155" : "#E5E7EB",
+const [aiQuestion, setAiQuestion] = useState("");
+const [aiAnswer, setAiAnswer] = useState("");
+const [aiQuestionLoading, setAiQuestionLoading] = useState(false);
+const [aiQuestionError, setAiQuestionError] = useState("");
+
+const theme = {
+bg: darkMode ? "#0F172A" : "#F9FAFB",
+card: darkMode ? "#1E293B" : "#FFFFFF",
+text: darkMode ? "#F1F5F9" : "#111827",
+subtext: darkMode ? "#94A3B8" : "#6B7280",
+border: darkMode ? "#334155" : "#E5E7EB",
 };
 
 const symbol = getCurrencySymbol(user?.currency);
 
-  //Add Toggle (Monthly / Weekly + Stacked)
-  const [viewMode, setViewMode] = useState("monthly");
-  const [stacked, setStacked] = useState(false);
+//Add Toggle (Monthly / Weekly + Stacked)
+const [viewMode, setViewMode] = useState("monthly");
+const [stacked, setStacked] = useState(false);
 
 // Define colors for slices
 const COLORS = [
@@ -109,31 +114,31 @@ const [range, setRange] = useState([
 const ITEMS_PER_PAGE = 5;
 const [currentPage, setCurrentPage] = useState(1);
 
-  // ✅ Filter transactions based on selected date range
-  const filteredTransactions = useMemo(() => {
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-    to.setHours(23, 59, 59, 999); // include full end day
+// ✅ Filter transactions based on selected date range
+const filteredTransactions = useMemo(() => {
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+  to.setHours(23, 59, 59, 999); // include full end day
 
-    return transactions.filter((t) => {
-      const transactionDate = new Date(t.date);
-      return transactionDate >= from && transactionDate <= to;
-    });
-  }, [transactions, fromDate, toDate]);
+  return transactions.filter((t) => {
+    const transactionDate = new Date(t.date);
+    return transactionDate >= from && transactionDate <= to;
+  });
+}, [transactions, fromDate, toDate]);
 
-  // Reset page when date filter changes
+// Reset page when date filter changes
 useEffect(() => {
   setCurrentPage(1);
 }, [fromDate, toDate]);
 
-   // ✅ Put this FIRST
+// ✅ Put this FIRST
 function formatDate(date) {
   const d = new Date(date);
   return d.toLocaleDateString("en-GB");
 }
 
-  // Running balance chart data
-  // ✅ Then useMemo
+// Running balance chart data
+// ✅ Then useMemo
 const balanceChartData = useMemo(() => {
   const sorted = [...filteredTransactions]
     .map((t) => ({
@@ -187,10 +192,10 @@ const categoryChartData = useMemo(() => {
   }));
 }, [filteredTransactions]);
 
-  // ✅ Calculations
-  const income = filteredTransactions
-    .filter((t) => t.amount > 0)
-    .reduce((acc, curr) => acc + curr.amount, 0);
+// ✅ Calculations
+const income = filteredTransactions
+  .filter((t) => Number(t.amount) > 0)
+  .reduce((acc, curr) => acc + Number(curr.amount), 0);
 
   const expense = filteredTransactions
     .filter((t) => t.amount < 0)
@@ -283,7 +288,7 @@ const generateAIInsight = async () => {
 
       expensePercentageOfIncome,
 
-      recentTransactions: filteredTransactions
+      /*recentTransactions: filteredTransactions
         .slice()
         .sort(
           (a, b) =>
@@ -296,7 +301,7 @@ const generateAIInsight = async () => {
           amount: Number(t.amount),
           description: t.description,
           paymentMode: t.mode,
-        })),
+        })),*/
     };
 
     // ================= BACKEND =================
@@ -320,7 +325,112 @@ const generateAIInsight = async () => {
   }
 };
 
-  // ✅ Monthly chart data (group by month)
+const askAIQuestion = async () => {
+  if (!aiQuestion.trim()) {
+    return;
+  }
+
+  try {
+    setAiQuestionLoading(true);
+    setAiQuestionError("");
+    setAiAnswer("");
+
+    // Reuse the same financial data used by AI Financial Insight
+    const categories = {};
+
+    filteredTransactions.forEach((t) => {
+      const amount = Number(t.amount);
+
+      if (amount < 0) {
+        const category = t.category || "General";
+
+        categories[category] =
+          (categories[category] || 0) + Math.abs(amount);
+      }
+    });
+
+    const categoryPercentages = {};
+
+    Object.entries(categories).forEach(([category, amount]) => {
+      categoryPercentages[category] =
+        expense > 0
+          ? Number(((amount / expense) * 100).toFixed(2))
+          : 0;
+    });
+
+    const highestExpenseEntry = Object.entries(categories).sort(
+      (a, b) => b[1] - a[1]
+    )[0];
+
+    const highestExpenseCategory = highestExpenseEntry
+      ? highestExpenseEntry[0]
+      : "None";
+
+    const highestExpenseAmount = highestExpenseEntry
+      ? highestExpenseEntry[1]
+      : 0;
+
+    const highestExpensePercentage =
+      expense > 0
+        ? Number(
+            ((highestExpenseAmount / expense) * 100).toFixed(2)
+          )
+        : 0;
+
+    const expensePercentageOfIncome =
+      income > 0
+        ? Number(((expense / income) * 100).toFixed(2))
+        : 0;
+
+    const financialData = {
+      currency: user?.currency || "SEK",
+
+      dateRange: {
+        from: fromDate,
+        to: toDate,
+      },
+
+      totalIncome: income,
+      totalExpenses: expense,
+      remainingBalance: totalBalance,
+      transactionCount,
+
+      categories,
+      categoryPercentages,
+
+      highestExpenseCategory,
+      highestExpenseAmount,
+      highestExpensePercentage,
+
+      expensePercentageOfIncome,
+    };
+
+    const response = await API.post("/ai/ask", {
+      question: aiQuestion,
+      financialData,
+    });
+
+    const data = response.data;
+
+    if (!data.success) {
+      throw new Error(
+        data.message || "Failed to answer question"
+      );
+    }
+
+    setAiAnswer(data.answer);
+  } catch (error) {
+    console.error("AI Question Error:", error);
+
+    setAiQuestionError(
+      "Unable to answer your question. Please try again."
+    );
+  } finally {
+    setAiQuestionLoading(false);
+  }
+};
+
+// ✅ Monthly chart data (group by month)
 const monthlyMap = {}; 
 transactions
   .filter((t) => t.date >= fromDate && t.date <= toDate)
@@ -450,8 +560,8 @@ const exportChart = async () => {
         <div className="summary-card transactions"><h4>Transactions</h4><p>{transactionCount}</p></div>
       </div>
 
-      {/* ================= AI Insight ================= */}
-      <div className="ai-insight-card">
+{/* ================= AI Insight ================= */}
+<div className="ai-insight-card">
   <div className="ai-insight-header">
     <div>
       <h3>
@@ -460,7 +570,7 @@ const exportChart = async () => {
       </h3>
 
       <p>
-        Get an AI-powered analysis of your current spending.
+        Get an AI-powered analysis of your spending for the selected date range.
       </p>
     </div>
 
@@ -477,7 +587,7 @@ const exportChart = async () => {
       ) : (
         <>
           <i className="fa-solid fa-wand-magic-sparkles"></i>
-          Generate Insight
+          Generate AI Insight
         </>
       )}
     </button>
@@ -490,18 +600,135 @@ const exportChart = async () => {
   )}
 
   {aiInsight && (
-    <div className="ai-insight-result">
-
+  <div className="ai-insight-result">
     <h4 className="ai-section-title">
       <i className="fa-solid fa-lightbulb"></i>
+      AI Analysis
     </h4>
 
-      <p>{aiInsight}</p>
+    <div className="ai-insight-text">
+      {aiInsight.split("\n").map((line, index) => (
+        <p key={index}>{line || "\u00A0"}</p>
+      ))}
     </div>
+  </div>
   )}
 </div>
 
-      {/* ================= DATE FILTER ================= */}
+{/* ================= ASK AI ================= */}
+<div className="ai-question-card">
+
+  <div className="ai-question-header">
+    <div>
+      <h3>
+        <i className="fa-solid fa-comments"></i>
+        Ask AI About Your Finances
+      </h3>
+
+      <p>
+        Ask questions about your spending for the selected date range.
+      </p>
+    </div>
+  </div>
+
+  <div className="ai-question-input-wrapper">
+
+    <input
+      type="text"
+      value={aiQuestion}
+      onChange={(e) => setAiQuestion(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          askAIQuestion();
+        }
+      }}
+      placeholder="e.g. Where am I spending the most?"
+      disabled={aiQuestionLoading}
+    />
+
+    <button
+      className="btn-primary-dashboard"
+      onClick={askAIQuestion}
+      disabled={
+        aiQuestionLoading ||
+        !aiQuestion.trim() ||
+        filteredTransactions.length === 0
+      }
+    >
+      {aiQuestionLoading ? (
+        <>
+          <i className="fa-solid fa-spinner fa-spin"></i>
+          Thinking...
+        </>
+      ) : (
+        <>
+          <i className="fa-solid fa-paper-plane"></i>
+          Ask AI
+        </>
+      )}
+    </button>
+
+  </div>
+
+  {/* Example questions */}
+  <div className="ai-question-suggestions">
+
+    <button
+      onClick={() =>
+        setAiQuestion("Where am I spending the most?")
+      }
+    >
+      Where am I spending the most?
+    </button>
+
+    <button
+      onClick={() =>
+        setAiQuestion("How much did I spend on food?")
+      }
+    >
+      How much did I spend on food?
+    </button>
+
+    <button
+      onClick={() =>
+        setAiQuestion("What is my biggest expense?")
+      }
+    >
+      What is my biggest expense?
+    </button>
+
+    <button
+      onClick={() =>
+        setAiQuestion("How much money did I save?")
+      }
+    >
+      How much money did I save?
+    </button>
+
+  </div>
+
+  {aiQuestionError && (
+    <p className="ai-error">
+      {aiQuestionError}
+    </p>
+  )}
+
+  {aiAnswer && (
+    <div className="ai-question-answer">
+
+      <div className="ai-answer-title">
+        <i className="fa-solid fa-robot"></i>
+        AI Answer
+      </div>
+
+      <p>{aiAnswer}</p>
+
+    </div>
+  )}
+
+</div>
+
+{/* ================= DATE FILTER ================= */}
  <div className="date-filter-wrapper" style={{
   display: "flex",
   alignItems: "center",
