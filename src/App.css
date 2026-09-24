@@ -4086,3 +4086,39 @@ border-radius: 10px;
     text-align: left;
   }
 }
+
+.ai-answer-content {
+  margin-top: 10px;
+  line-height: 1.7;
+}
+
+.ai-answer-content p {
+  margin: 0 0 10px;
+}
+
+.ai-answer-content ul,
+.ai-answer-content ol {
+  margin: 8px 0 12px;
+  padding-left: 24px;
+}
+
+.ai-answer-content li {
+  margin-bottom: 6px;
+}
+
+.ai-answer-content strong {
+  font-weight: 700;
+}
+
+.ai-answer-content h1,
+.ai-answer-content h2,
+.ai-answer-content h3,
+.ai-answer-content h4 {
+  margin: 12px 0 8px;
+}
+
+.ai-answer-content code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}

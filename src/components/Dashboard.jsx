@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import * as htmlToImage from "html-to-image";
 import { getCurrencySymbol } from "../utils/currency";
 import { API } from "../services/api";
+import ReactMarkdown from "react-markdown";
 
 const Dashboard = ({ transactions, user, darkMode }) => {
 
@@ -715,17 +716,16 @@ const exportChart = async () => {
 
   {aiAnswer && (
     <div className="ai-question-answer">
-
       <div className="ai-answer-title">
         <i className="fa-solid fa-robot"></i>
         AI Answer
       </div>
 
-      <p>{aiAnswer}</p>
-
+      <div className="ai-answer-content">
+        <ReactMarkdown>{aiAnswer}</ReactMarkdown>
+      </div>
     </div>
   )}
-
 </div>
 
 {/* ================= DATE FILTER ================= */}
